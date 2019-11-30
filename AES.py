@@ -12,14 +12,27 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
     if mode == 'E':
         if out == True:
             print('%s %dbit Encrypting Start: Nk = %2d Nr = %2d\n'%(sys._getframe().f_code.co_name, Bit, Nk, Nr))
-        I = state(InputBytes)           # State
-        K = keys(state(KeyBytes),Nr)    # Key Scheduling
-        R = I^K.Stream[0]               # Add Round Key + Cipher key
+        I = state(InputBytes)                # State
+        K = keys(state(KeyBytes),Nr)         # Key Scheduling
+        R = [I^K.Stream[0]]                  # Add Round Key + Cipher key
+        SB = []
+        SR = []
+        MC = []
+        if save == True:
+            for i in range(Nr):
+                R.append(state())
+                SB.append(state())
+                SR.append(state())
+                MC.append(state())
+            for i in range(Nr):
+                SB[i] = R[i].SubBytes()       # SubBytes
+                #SR[i] = SB[i]
+        
         
         if out == True:
             I.outPrint()
             K.out()
-            R.outPrint()
+            
         
 
     elif mode == 'D':
@@ -150,8 +163,55 @@ class state:
         
         return newState
 
-class keys:
-    def __init__(self, initValue:state, Needs:int):  # 매개변수 기본값과 주석을 동시에 사용할 경우 주석이 먼저.
+    def SubBytes(self):
+        newState = state()
+        newState.Aa = Table.Sbox[self.Aa]
+        newState.Ba = Table.Sbox[self.Ba]
+        newState.Ca = Table.Sbox[self.Ca]
+        newState.Da = Table.Sbox[self.Da]
+
+        newState.Ab = Table.Sbox[self.Ab]
+        newState.Bb = Table.Sbox[self.Bb]
+        newState.Cb = Table.Sbox[self.Cb]
+        newState.Db = Table.Sbox[self.Db]
+
+        newState.Ac = Table.Sbox[self.Ac]
+        newState.Bc = Table.Sbox[self.Bc]
+        newState.Cc = Table.Sbox[self.Cc]
+        newState.Dc = Table.Sbox[self.Dc]
+        
+        newState.Ad = Table.Sbox[self.Ad]
+        newState.Bd = Table.Sbox[self.Bd]
+        newState.Cd = Table.Sbox[self.Cd]
+        newState.Dd = Table.Sbox[self.Dd]
+        return newState
+    
+    def InvSubBytes(self):
+        newState = state()
+        newState.Aa = Table.Ibox[self.Aa]
+        newState.Ba = Table.Ibox[self.Ba]
+        newState.Ca = Table.Ibox[self.Ca]
+        newState.Da = Table.Ibox[self.Da]
+
+        newState.Ab = Table.Ibox[self.Ab]
+        newState.Bb = Table.Ibox[self.Bb]
+        newState.Cb = Table.Ibox[self.Cb]
+        newState.Db = Table.Ibox[self.Db]
+
+        newState.Ac = Table.Ibox[self.Ac]
+        newState.Bc = Table.Ibox[self.Bc]
+        newState.Cc = Table.Ibox[self.Cc]
+        newState.Dc = Table.Ibox[self.Dc]
+        
+        newState.Ad = Table.Ibox[self.Ad]
+        newState.Bd = Table.Ibox[self.Bd]
+        newState.Cd = Table.Ibox[self.Cd]
+        newState.Dd = Table.Ibox[self.Dd]
+        
+        return newState
+
+class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
+    def __init__(self, initValue:state, Needs:int):
         self.Stream = []
         self.Stream.append(initValue)
         for j in range(Needs):
@@ -175,8 +235,8 @@ class keys:
             self.Stream[i+1].Ad = self.Stream[i].Ad^self.Stream[i+1].Ac
             self.Stream[i+1].Bd = self.Stream[i].Bd^self.Stream[i+1].Bc
             self.Stream[i+1].Cd = self.Stream[i].Cd^self.Stream[i+1].Cc
-            self.Stream[i+1].Dd = self.Stream[i].Dd^self.Stream[i+1].Dc
-    
+            self.Stream[i+1].Dd = self.Stream[i].Dd^self.Stream[i+1].Dc            
+
     def out(self, num:int=-1):
         if num > len(self.Stream) or num < 0:    # 모두 출력
             for i in range(len(self.Stream)):
