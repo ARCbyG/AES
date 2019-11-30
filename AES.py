@@ -1,23 +1,30 @@
-import sys
+import sys  # 옵션 예외처리시 사용(함수 이름 반환)
 
-def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A'): # 16진수인 스트링으로 받아서 state로 변환 후 암호화 진행
+def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', out:bool=False, save:bool=False): # 16진수인 스트링으로 받아서 state로 변환 후 암호화 진행
     if Version == 'A':
-        Bit = 128
-        Rnd = 10
+        Bit = 128   # Block 크기
+        Nr = 10     # Round 횟수
+        Nk = 4      # Word 길이
     else:
         print("%s의 옵션이 틀렸습니다. :%s"%(sys._getframe().f_code.co_name, Version))
         return -1
 
     if mode == 'E':
-        print('%s %dbit Encrypting Start\n'%(sys._getframe().f_code.co_name, Bit))
-        I = state(InputBytes)
-        K = keys(state(KeyBytes),Rnd)
-        I.outPrint()
-        K.out()
+        if out == True:
+            print('%s %dbit Encrypting Start: Nk = %2d Nr = %2d\n'%(sys._getframe().f_code.co_name, Bit, Nk, Nr))
+        I = state(InputBytes)           # State
+        K = keys(state(KeyBytes),Nr)    # Key Scheduling
+        R = I^K.Stream[0]               # Add Round Key + Cipher key
+        
+        if out == True:
+            I.outPrint()
+            K.out()
+            R.outPrint()
         
 
     elif mode == 'D':
-        print('%s %dbit Decrypting Start\n'%(sys._getframe().f_code.co_name, Bit))
+        if out == True:
+            print('%s %dbit Decrypting Start: Nk = %2d Nr = %2d\n'%(sys._getframe().f_code.co_name, Bit, Nk, Nr))
         
 
     else:
@@ -118,46 +125,70 @@ class state:
                            self.Ba, self.Bb, self.Bc, self.Bd,
                            self.Ca, self.Cb, self.Cc, self.Cd,
                            self.Da, self.Db, self.Dc, self.Dd))   # 출력시
+    
+    def __xor__(self, otherState):  #otherState 타입 체크 하고싶은데 자기자신이라 정의가 안됨. 어떻게 해결하지?
+        newState = state()
+        newState.Aa = self.Aa ^ otherState.Aa
+        newState.Ba = self.Ba ^ otherState.Ba
+        newState.Ca = self.Ca ^ otherState.Ca
+        newState.Da = self.Da ^ otherState.Da
+
+        newState.Ab = self.Ab ^ otherState.Ab
+        newState.Bb = self.Bb ^ otherState.Bb
+        newState.Cb = self.Cb ^ otherState.Cb
+        newState.Db = self.Db ^ otherState.Db
+
+        newState.Ac = self.Ac ^ otherState.Ac
+        newState.Bc = self.Bc ^ otherState.Bc
+        newState.Cc = self.Cc ^ otherState.Cc
+        newState.Dc = self.Dc ^ otherState.Dc
+        
+        newState.Ad = self.Ad ^ otherState.Ad
+        newState.Bd = self.Bd ^ otherState.Bd
+        newState.Cd = self.Cd ^ otherState.Cd
+        newState.Dd = self.Dd ^ otherState.Dd
+        
+        return newState
 
 class keys:
     def __init__(self, initValue:state, Needs:int):  # 매개변수 기본값과 주석을 동시에 사용할 경우 주석이 먼저.
-        self.S = [] # S는 클래스 내부에서만 쓰임. 출력을 따로 함수로 정의해줬기 때문에 어차피 사용자는 모르는 변수.
-        self.S.append(initValue)
+        self.Stream = []
+        self.Stream.append(initValue)
         for j in range(Needs):
-            self.S.append(state())
+            self.Stream.append(state())
         for i in range(Needs):
-            self.S[i+1].Aa = self.S[i].Aa^Table.Sbox[self.S[i].Bd]^Table.Rcon[i]
-            self.S[i+1].Ba = self.S[i].Ba^Table.Sbox[self.S[i].Cd]
-            self.S[i+1].Ca = self.S[i].Ca^Table.Sbox[self.S[i].Dd]
-            self.S[i+1].Da = self.S[i].Da^Table.Sbox[self.S[i].Ad]
+            self.Stream[i+1].Aa = self.Stream[i].Aa^Table.Sbox[self.Stream[i].Bd]^Table.Rcon[i]
+            self.Stream[i+1].Ba = self.Stream[i].Ba^Table.Sbox[self.Stream[i].Cd]
+            self.Stream[i+1].Ca = self.Stream[i].Ca^Table.Sbox[self.Stream[i].Dd]
+            self.Stream[i+1].Da = self.Stream[i].Da^Table.Sbox[self.Stream[i].Ad]
             
-            self.S[i+1].Ab = self.S[i].Ab^self.S[i+1].Aa
-            self.S[i+1].Bb = self.S[i].Bb^self.S[i+1].Ba
-            self.S[i+1].Cb = self.S[i].Cb^self.S[i+1].Ca
-            self.S[i+1].Db = self.S[i].Db^self.S[i+1].Da
+            self.Stream[i+1].Ab = self.Stream[i].Ab^self.Stream[i+1].Aa
+            self.Stream[i+1].Bb = self.Stream[i].Bb^self.Stream[i+1].Ba
+            self.Stream[i+1].Cb = self.Stream[i].Cb^self.Stream[i+1].Ca
+            self.Stream[i+1].Db = self.Stream[i].Db^self.Stream[i+1].Da
             
-            self.S[i+1].Ac = self.S[i].Ac^self.S[i+1].Ab
-            self.S[i+1].Bc = self.S[i].Bc^self.S[i+1].Bb
-            self.S[i+1].Cc = self.S[i].Cc^self.S[i+1].Cb
-            self.S[i+1].Dc = self.S[i].Dc^self.S[i+1].Db
+            self.Stream[i+1].Ac = self.Stream[i].Ac^self.Stream[i+1].Ab
+            self.Stream[i+1].Bc = self.Stream[i].Bc^self.Stream[i+1].Bb
+            self.Stream[i+1].Cc = self.Stream[i].Cc^self.Stream[i+1].Cb
+            self.Stream[i+1].Dc = self.Stream[i].Dc^self.Stream[i+1].Db
         
-            self.S[i+1].Ad = self.S[i].Ad^self.S[i+1].Ac
-            self.S[i+1].Bd = self.S[i].Bd^self.S[i+1].Bc
-            self.S[i+1].Cd = self.S[i].Cd^self.S[i+1].Cc
-            self.S[i+1].Dd = self.S[i].Dd^self.S[i+1].Dc
+            self.Stream[i+1].Ad = self.Stream[i].Ad^self.Stream[i+1].Ac
+            self.Stream[i+1].Bd = self.Stream[i].Bd^self.Stream[i+1].Bc
+            self.Stream[i+1].Cd = self.Stream[i].Cd^self.Stream[i+1].Cc
+            self.Stream[i+1].Dd = self.Stream[i].Dd^self.Stream[i+1].Dc
     
     def out(self, num:int=-1):
-        if num > len(self.S) or num < 0:    # 모두 출력
-            for i in range(len(self.S)):
+        if num > len(self.Stream) or num < 0:    # 모두 출력
+            for i in range(len(self.Stream)):
                 print('%d번째 확장키'%(i))
-                self.S[i].outPrint()
+                self.Stream[i].outPrint()
         else:
             print('%d번째 확장키'%num)
-            self.S[num].outPrint()
+            self.Stream[num].outPrint()
 
 def main():
-    AES("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34", "2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c", 'E')
-    #AES("32 43 f6 a8", "2b 7e 15 16", 'E')
+    AES("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34", "2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c", 'E', save=True, out=True)
+    #AES("32 43 f6 a8", "2b 7e 15 16", 'E', True)
 
 
 if __name__ == "__main__":
