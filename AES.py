@@ -26,7 +26,7 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
                 MC.append(state())
             for i in range(Nr):
                 SB[i] = R[i].SubBytes()       # SubBytes
-                #SR[i] = SB[i]
+                SR[i] = SB[i]
         
         
         if out == True:
@@ -162,6 +162,11 @@ class state:
         newState.Dd = self.Dd ^ otherState.Dd
         
         return newState
+    def __eq__(self, otherState):
+        if (self.Aa == otherState.Aa and self.Ba == otherState.Ba and self.Ca == otherState.Ca and self.Da == otherState.Da and self.Ab == otherState.Ab and self.Bb == otherState.Bb and self.Cb == otherState.Cb and self.Db == otherState.Db and self.Ac == otherState.Ac and self.Bc == otherState.Bc and self.Cc == otherState.Cc and self.Dc == otherState.Dc and self.Ad == otherState.Ad and self.Bd == otherState.Bd and self.Cd == otherState.Cd and self.Dd == otherState.Dd):
+            return True
+        else:
+            return False
 
     def SubBytes(self):
         newState = state()
@@ -185,7 +190,6 @@ class state:
         newState.Cd = Table.Sbox[self.Cd]
         newState.Dd = Table.Sbox[self.Dd]
         return newState
-    
     def InvSubBytes(self):
         newState = state()
         newState.Aa = Table.Ibox[self.Aa]
@@ -208,6 +212,51 @@ class state:
         newState.Cd = Table.Ibox[self.Cd]
         newState.Dd = Table.Ibox[self.Dd]
         
+        return newState
+
+    def ShiftRows(self):
+        newState = state()
+        newState.Aa = self.Aa
+        newState.Ba = self.Bb   #
+        newState.Ca = self.Cc   #
+        newState.Da = self.Dd   #
+
+        newState.Ab = self.Ab
+        newState.Bb = self.Bc   #
+        newState.Cb = self.Cd   #
+        newState.Db = self.Da   #
+
+        newState.Ac = self.Ac
+        newState.Bc = self.Bd   #
+        newState.Cc = self.Ca   #
+        newState.Dc = self.Db   #
+        
+        newState.Ad = self.Ad
+        newState.Bd = self.Ba   #
+        newState.Cd = self.Cb   #
+        newState.Dd = self.Dc   #
+        return newState
+    def InvShiftRows(self):
+        newState = state()
+        newState.Aa = self.Aa
+        newState.Bb = self.Ba
+        newState.Cc = self.Ca
+        newState.Dd = self.Da
+
+        newState.Ab = self.Ab
+        newState.Bc = self.Bb
+        newState.Cd = self.Cb
+        newState.Da = self.Db
+
+        newState.Ac = self.Ac
+        newState.Bd = self.Bc
+        newState.Ca = self.Cc
+        newState.Db = self.Dc
+        
+        newState.Ad = self.Ad
+        newState.Ba = self.Bd
+        newState.Cb = self.Cd
+        newState.Dc = self.Dd
         return newState
 
 class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
