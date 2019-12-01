@@ -11,10 +11,10 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
 
     if mode == 'E':
         if out == True:
-            print('%s %dBit Encrypting Start: Nk = %2d Nr = %2d\n'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
-        I = state(InputBytes)                # State
-        K = keys(state(KeyBytes),Nr)         # Key Scheduling
-        R = [I^K.Stream[0]]                  # Add Round Key + Cipher key
+            print('%s %dBit Encrypting Start: Nk = %1d Nr = %2d\n'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
+        I = state(InputBytes)                   # State
+        K = keys(state(KeyBytes),Nr)            # Key Scheduling
+        R = [I^K.Stream[0]]                     # Add Round Key + Cipher key
         SB = []
         SR = []
         MC = []
@@ -32,9 +32,9 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
                 SR[i] = SB[i].ShiftRows()       # ShiftRows
                 MC[i] = SR[i].MixColumns()      # MixColumns
                 R[i+1] = MC[i]^K.Stream[i+1]    # Add Round Key + Round key N
-            SB[9] = R[9].SubBytes()             # SubBytes
-            SR[9] = SB[9].ShiftRows()           # ShiftRows
-            R[10] = SR[9]^K.Stream[10]          # Add Round Key + Round key 10
+            SB[Nr-1] = R[Nr-1].SubBytes()       # SubBytes
+            SR[Nr-1] = SB[Nr-1].ShiftRows()     # ShiftRows
+            R[Nr] = SR[Nr-1]^K.Stream[Nr]       # Add Round Key + Round key 10
         elif save == False:
             SB.append(state())
             SR.append(state())
@@ -43,18 +43,17 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
                 SB[0] = R[0].SubBytes()         # SubBytes
                 SR[0] = SB[0].ShiftRows()       # ShiftRows
                 MC[0] = SR[0].MixColumns()      # MixColumns
-                R[0] = MC[0]^K.Stream[i+1]         # Add Round Key + Round key N
-                
+                R[0] = MC[0]^K.Stream[i+1]      # Add Round Key + Round key N
             SB[0] = R[0].SubBytes()             # SubBytes
             SR[0] = SB[0].ShiftRows()           # ShiftRows
-            R[0] = SR[0]^K.Stream[10]           # Add Round Key + Round key 10
+            R[0] = SR[0]^K.Stream[Nr]           # Add Round Key + Round key 10
 
         if out == True:
             print('\ninput:')
             I.outPrint()
             print('\nKey[0]:')
             K.Stream[0].outPrint()
-            for i in range(len(MC)):
+            for i in range(Nr-1):
                 print('\nR[%02d]:'%i)
                 R[i].outPrint()
                 print('\nSB[%02d]:'%i)
@@ -64,25 +63,87 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
                 print('\nMC[%02d]:'%i)
                 MC[i].outPrint()
                 print('\nKey[%02d]:'%(i+1))
-                K.Stream[i].outPrint()
-                
-            print('\nR[%02d]:'%len(MC))
-            R[len(MC)].outPrint()
-            print('\nSB[%02d]:'%len(MC))
-            SB[len(MC)].outPrint()
-            print('\nSR[%02d]:'%len(MC))
-            SR[len(MC)].outPrint()
-            print('\nKey[%02d]:'%(len(MC)+1))
-            K.Stream[len(MC)].outPrint()
+                K.Stream[i+1].outPrint()
+            print('\nR[%02d]:'%Nr-1)
+            R[Nr-1].outPrint()
+            print('\nSB[%02d]:'%Nr-1)
+            SB[Nr-1].outPrint()
+            print('\nSR[%02d]:'%Nr-1)
+            SR[Nr-1].outPrint()
+            print('\nKey[%02d]:'%(Nr))
+            K.Stream[Nr].outPrint()
             print('\noutput:')
-            R[len(MC)+1].outPrint()
+            R[-1].outPrint()
             
-        return R[len(MC)+1]
+        return R[-1].outMain()
 
     elif mode == 'D':
         if out == True:
-            print('%s %dbit Decrypting Start: Nk = %2d Nr = %2d\n'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
-        
+            print('%s %dbit Decrypting Start: Nk = %1d Nr = %2d\n'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
+        I = state(InputBytes)                   # State
+        K = keys(state(KeyBytes),Nr)            # Key Scheduling
+        R = [I^K.Stream[Nr]]                    # Add Round Key + Cipher key
+        SB = []
+        SR = []
+        MC = []
+        if save == True:
+            R.append(state())
+            SB.append(state())
+            SR.append(state())
+            for i in range(Nr-1):
+                R.append(state())
+                SB.append(state())
+                SR.append(state())
+                MC.append(state())
+            SR[0] = R[0].InvShiftRows()         # InvShiftRows
+            for i in range(Nr-1):
+                SB[i] = SR[i].InvSubBytes()     # InvSubBytes
+                R[i+1] = SB[i]^K.Stream[Nr-i-1] # Add Round Key + Round key Nr-N
+                MC[i] = R[i+1].InvMixColumns()  # InvMixColumns
+                SR[i+1] = MC[i].InvShiftRows()  # InvShiftRows
+            SB[Nr-1] = SR[Nr-1].InvSubBytes()   # InvSubBytes
+            R[Nr] = SB[Nr-1]^K.Stream[0]        # Add Round Key + Round key 0
+        elif save == False:
+            SB.append(state())
+            SR.append(state())
+            MC.append(state())
+            SR[0] = R[0].InvShiftRows()         # InvShiftRows
+            for i in range(Nr-1):
+                SB[0] = SR[0].InvSubBytes()     # InvSubBytes
+                R[0] = SB[0]^K.Stream[Nr-(i+1)] # Add Round Key + Round key Nr-N
+                MC[0] = R[0].InvMixColumns()    # InvMixColumns
+                SR[0] = MC[0].InvShiftRows()    # InvShiftRows
+            SB[0] = SR[0].InvSubBytes()         # InvSubBytes
+            R[0] = SB[0]^K.Stream[0]            # Add Round Key + Round key 0
+
+        if out == True:
+            print('\ninput:')
+            I.outPrint()
+            print('\nKey[0]:')
+            K.Stream[Nr].outPrint()
+            print('\nR[%02d]:'%i)
+            R[0].outPrint()
+            for i in range(Nr-1):
+                print('\nSR[%02d]:'%i)
+                SR[i].outPrint()
+                print('\nSB[%02d]:'%i)
+                SB[i].outPrint()
+                print('\nKey[%02d]:'%(i+1))
+                K.Stream[Nr-(i+1)].outPrint()
+                print('\nR[%02d]:'%(i+1))
+                R[i+1].outPrint()
+                print('\nMC[%02d]:'%i)
+                MC[i].outPrint()
+            print('\nSR[%02d]:'%(Nr-1))
+            SR[(Nr-1)].outPrint()
+            print('\nSB[%02d]:'%(Nr-1))
+            SB[(Nr-1)].outPrint()
+            print('\nKey[%02d]:'%(Nr))
+            K.Stream[0].outPrint()
+            print('\nR[%02d]:'%(Nr))
+            R[-1].outPrint()
+            
+        return R[-1].outMain()
 
     else:
         print("%s의 옵션이 틀렸습니다. :%s"%(sys._getframe().f_code.co_name, mode))
@@ -128,7 +189,8 @@ class Table:
 
     Mix     = "02 01 01 03 03 02 01 01 01 03 02 01 01 01 03 02"
     InvMix  = "0e 09 0d 0b 0b 0e 09 0d 0d 0b 0e 09 09 0d 0b 0e"
-def MixProduct(Mix:int, X:int): # 순서는 상관없지만 Mix에 작은 수를 넣는 게 계산이 편하다.
+def MixP(Mix:int, X:int): # 순서는 상관없지만 Mix에 작은 수를 넣는 게 계산이 편하다.
+    ''' 
     GF = [0, 0, 0, 0]
     GF[0] = Mix%2**1
     GF[1] = (Mix%2**2)//2**1
@@ -136,8 +198,20 @@ def MixProduct(Mix:int, X:int): # 순서는 상관없지만 Mix에 작은 수를
     GF[3] = Mix//2**3
     result = 0
     for i in range(len(GF)):
-        GF[i] *= 2**i*X
+        tX = X % 0x100 if (X%2**(8-i))//2**(7-i) == 0 else (X%0x100) ^ 0x1b
+        GF[i] *= 2**i*tX
         result ^= GF[i]
+    return result'''
+    result = 0
+    for i in range(8):
+        if Mix & 1: result ^= X
+        K = X & 0x80
+        X <<= 1
+        # keeresult a 8 bit
+        X &= 0xFF
+        if K:
+            X ^= 0x1b
+        Mix >>= 1
     return result
 class state:
     def __init__(self, initValue:str=""):
@@ -181,21 +255,8 @@ class state:
                            self.Ba, self.Bb, self.Bc, self.Bd,
                            self.Ca, self.Cb, self.Cc, self.Cd,
                            self.Da, self.Db, self.Dc, self.Dd]   # 출력시
+                           '''
         
-    def outMain(self):  # 이 파이썬 코드에선 어차피 모든 원소가 한 행렬이 아닌 각각의 변수라서 의미가 없다. 향후 C코드로 넘어가 최적화를 할 때 쓸 아이디어.
-        print("\n%3x%3x%3x%3x\n%3x%3x%3x%3x\n%3x%3x%3x%3x\n%3x%3x%3x%3x\n\n"%
-                         (self.Aa, self.Ba, self.Ca, self.Da,
-                          self.Ab, self.Bb, self.Cb, self.Db,
-                          self.Ac, self.Bc, self.Cc, self.Dc,
-                          self.Ad, self.Bd, self.Cd, self.Dd))    # 계산시
-        '''
-    def outPrint(self):
-        print("%3x%3x%3x%3x\n%3x%3x%3x%3x\n%3x%3x%3x%3x\n%3x%3x%3x%3x\n"%
-                          (self.Aa, self.Ab, self.Ac, self.Ad,
-                           self.Ba, self.Bb, self.Bc, self.Bd,
-                           self.Ca, self.Cb, self.Cc, self.Cd,
-                           self.Da, self.Db, self.Dc, self.Dd))   # 출력시
-    
     def __xor__(self, otherState):  #otherState 타입 체크 하고싶은데 자기자신이라 정의가 안됨. 어떻게 해결하지?
         newState = state()
         newState.Aa = self.Aa ^ otherState.Aa
@@ -224,30 +285,22 @@ class state:
             return True
         else:
             return False
-    def net(self, MaxNum, xorNum):
-        newState = state()
-        newState.Aa = self.Aa if self.Aa < MaxNum else self.Aa ^ xorNum
-        newState.Ba = self.Ba if self.Ba < MaxNum else self.Ba ^ xorNum
-        newState.Ca = self.Ca if self.Ca < MaxNum else self.Ca ^ xorNum
-        newState.Da = self.Da if self.Da < MaxNum else self.Da ^ xorNum
 
-        newState.Ab = self.Ab if self.Ab < MaxNum else self.Ab ^ xorNum
-        newState.Bb = self.Bb if self.Bb < MaxNum else self.Bb ^ xorNum
-        newState.Cb = self.Cb if self.Cb < MaxNum else self.Cb ^ xorNum
-        newState.Db = self.Db if self.Db < MaxNum else self.Db ^ xorNum
-
-        newState.Ac = self.Ac if self.Ac < MaxNum else self.Ac ^ xorNum
-        newState.Bc = self.Bc if self.Bc < MaxNum else self.Bc ^ xorNum
-        newState.Cc = self.Cc if self.Cc < MaxNum else self.Cc ^ xorNum
-        newState.Dc = self.Dc if self.Dc < MaxNum else self.Dc ^ xorNum
-        
-        newState.Ad = self.Ad if self.Ad < MaxNum else self.Ad ^ xorNum
-        newState.Bd = self.Bd if self.Bd < MaxNum else self.Bd ^ xorNum
-        newState.Cd = self.Cd if self.Cd < MaxNum else self.Cd ^ xorNum
-        newState.Dd = self.Dd if self.Dd < MaxNum else self.Dd ^ xorNum
-        
-        return newState
-
+    def outMain(self, out:bool=False):
+        tmp = ' '.join([hex(self.Aa)[2:],hex(self.Ba)[2:],hex(self.Ca)[2:],hex(self.Da)[2:],
+                        hex(self.Ab)[2:],hex(self.Bb)[2:],hex(self.Cb)[2:],hex(self.Db)[2:],
+                        hex(self.Ac)[2:],hex(self.Bc)[2:],hex(self.Cc)[2:],hex(self.Dc)[2:],
+                        hex(self.Ad)[2:],hex(self.Bd)[2:],hex(self.Cd)[2:],hex(self.Dd)[2:]])
+        if out == True:
+            print(tmp)
+        return tmp
+    def outPrint(self):
+        print("%3x%3x%3x%3x\n%3x%3x%3x%3x\n%3x%3x%3x%3x\n%3x%3x%3x%3x\n"%
+                          (self.Aa, self.Ab, self.Ac, self.Ad,
+                           self.Ba, self.Bb, self.Bc, self.Bd,
+                           self.Ca, self.Cb, self.Cc, self.Cd,
+                           self.Da, self.Db, self.Dc, self.Dd))   # 출력시
+    
     def SubBytes(self):
         newState = state()
         newState.Aa = Table.Sbox[self.Aa]
@@ -319,66 +372,66 @@ class state:
     def InvShiftRows(self):
         newState = state()
         newState.Aa = self.Aa
-        newState.Bb = self.Ba
-        newState.Cc = self.Ca
-        newState.Dd = self.Da
+        newState.Bb = self.Ba   #
+        newState.Cc = self.Ca   #
+        newState.Dd = self.Da   #
 
         newState.Ab = self.Ab
-        newState.Bc = self.Bb
-        newState.Cd = self.Cb
-        newState.Da = self.Db
+        newState.Bc = self.Bb   #
+        newState.Cd = self.Cb   #
+        newState.Da = self.Db   #
 
         newState.Ac = self.Ac
-        newState.Bd = self.Bc
-        newState.Ca = self.Cc
-        newState.Db = self.Dc
+        newState.Bd = self.Bc   #
+        newState.Ca = self.Cc   #
+        newState.Db = self.Dc   #
         
         newState.Ad = self.Ad
-        newState.Ba = self.Bd
-        newState.Cb = self.Cd
-        newState.Dc = self.Dd
+        newState.Ba = self.Bd   #
+        newState.Cb = self.Cd   #
+        newState.Dc = self.Dd   #
         return newState
 
     def MixColumns(self):   # bin(Mix원소)의 1의 수만큼 쉬프트 연산 후 모두 xor. 예를 들어 3(2^1 + 2^0)이라면 1칸쉬프트(*2^1)와 0칸 쉬프트(*2*0)를 xor한다.
         MixState = state(Table.Mix)
         newState = state()
-        newState.Aa = MixProduct(MixState.Aa,self.Aa) ^ MixProduct(MixState.Ab,self.Ba) ^ MixProduct(MixState.Ac,self.Ca) ^ MixProduct(MixState.Ad,self.Da)
-        newState.Ba = MixProduct(MixState.Ba,self.Aa) ^ MixProduct(MixState.Bb,self.Ba) ^ MixProduct(MixState.Bc,self.Ca) ^ MixProduct(MixState.Bd,self.Da)
-        newState.Ca = MixProduct(MixState.Ca,self.Aa) ^ MixProduct(MixState.Cb,self.Ba) ^ MixProduct(MixState.Cc,self.Ca) ^ MixProduct(MixState.Cd,self.Da)
-        newState.Da = MixProduct(MixState.Da,self.Aa) ^ MixProduct(MixState.Db,self.Ba) ^ MixProduct(MixState.Dc,self.Ca) ^ MixProduct(MixState.Dd,self.Da)
-        newState.Ab = MixProduct(MixState.Aa,self.Ab) ^ MixProduct(MixState.Ab,self.Bb) ^ MixProduct(MixState.Ac,self.Cb) ^ MixProduct(MixState.Ad,self.Db)
-        newState.Bb = MixProduct(MixState.Ba,self.Ab) ^ MixProduct(MixState.Bb,self.Bb) ^ MixProduct(MixState.Bc,self.Cb) ^ MixProduct(MixState.Bd,self.Db)
-        newState.Cb = MixProduct(MixState.Ca,self.Ab) ^ MixProduct(MixState.Cb,self.Bb) ^ MixProduct(MixState.Cc,self.Cb) ^ MixProduct(MixState.Cd,self.Db)
-        newState.Db = MixProduct(MixState.Da,self.Ab) ^ MixProduct(MixState.Db,self.Bb) ^ MixProduct(MixState.Dc,self.Cb) ^ MixProduct(MixState.Dd,self.Db)
-        newState.Ac = MixProduct(MixState.Aa,self.Ac) ^ MixProduct(MixState.Ab,self.Bc) ^ MixProduct(MixState.Ac,self.Cc) ^ MixProduct(MixState.Ad,self.Dc)
-        newState.Bc = MixProduct(MixState.Ba,self.Ac) ^ MixProduct(MixState.Bb,self.Bc) ^ MixProduct(MixState.Bc,self.Cc) ^ MixProduct(MixState.Bd,self.Dc)
-        newState.Cc = MixProduct(MixState.Ca,self.Ac) ^ MixProduct(MixState.Cb,self.Bc) ^ MixProduct(MixState.Cc,self.Cc) ^ MixProduct(MixState.Cd,self.Dc)
-        newState.Dc = MixProduct(MixState.Da,self.Ac) ^ MixProduct(MixState.Db,self.Bc) ^ MixProduct(MixState.Dc,self.Cc) ^ MixProduct(MixState.Dd,self.Dc)
-        newState.Ad = MixProduct(MixState.Aa,self.Ad) ^ MixProduct(MixState.Ab,self.Bd) ^ MixProduct(MixState.Ac,self.Cd) ^ MixProduct(MixState.Ad,self.Dd)
-        newState.Bd = MixProduct(MixState.Ba,self.Ad) ^ MixProduct(MixState.Bb,self.Bd) ^ MixProduct(MixState.Bc,self.Cd) ^ MixProduct(MixState.Bd,self.Dd)
-        newState.Cd = MixProduct(MixState.Ca,self.Ad) ^ MixProduct(MixState.Cb,self.Bd) ^ MixProduct(MixState.Cc,self.Cd) ^ MixProduct(MixState.Cd,self.Dd)
-        newState.Dd = MixProduct(MixState.Da,self.Ad) ^ MixProduct(MixState.Db,self.Bd) ^ MixProduct(MixState.Dc,self.Cd) ^ MixProduct(MixState.Dd,self.Dd)
-        return newState.net(0x100, 0x11b)
+        newState.Aa = MixP(MixState.Aa,self.Aa) ^ MixP(MixState.Ab,self.Ba) ^ MixP(MixState.Ac,self.Ca) ^ MixP(MixState.Ad,self.Da)
+        newState.Ba = MixP(MixState.Ba,self.Aa) ^ MixP(MixState.Bb,self.Ba) ^ MixP(MixState.Bc,self.Ca) ^ MixP(MixState.Bd,self.Da)
+        newState.Ca = MixP(MixState.Ca,self.Aa) ^ MixP(MixState.Cb,self.Ba) ^ MixP(MixState.Cc,self.Ca) ^ MixP(MixState.Cd,self.Da)
+        newState.Da = MixP(MixState.Da,self.Aa) ^ MixP(MixState.Db,self.Ba) ^ MixP(MixState.Dc,self.Ca) ^ MixP(MixState.Dd,self.Da)
+        newState.Ab = MixP(MixState.Aa,self.Ab) ^ MixP(MixState.Ab,self.Bb) ^ MixP(MixState.Ac,self.Cb) ^ MixP(MixState.Ad,self.Db)
+        newState.Bb = MixP(MixState.Ba,self.Ab) ^ MixP(MixState.Bb,self.Bb) ^ MixP(MixState.Bc,self.Cb) ^ MixP(MixState.Bd,self.Db)
+        newState.Cb = MixP(MixState.Ca,self.Ab) ^ MixP(MixState.Cb,self.Bb) ^ MixP(MixState.Cc,self.Cb) ^ MixP(MixState.Cd,self.Db)
+        newState.Db = MixP(MixState.Da,self.Ab) ^ MixP(MixState.Db,self.Bb) ^ MixP(MixState.Dc,self.Cb) ^ MixP(MixState.Dd,self.Db)
+        newState.Ac = MixP(MixState.Aa,self.Ac) ^ MixP(MixState.Ab,self.Bc) ^ MixP(MixState.Ac,self.Cc) ^ MixP(MixState.Ad,self.Dc)
+        newState.Bc = MixP(MixState.Ba,self.Ac) ^ MixP(MixState.Bb,self.Bc) ^ MixP(MixState.Bc,self.Cc) ^ MixP(MixState.Bd,self.Dc)
+        newState.Cc = MixP(MixState.Ca,self.Ac) ^ MixP(MixState.Cb,self.Bc) ^ MixP(MixState.Cc,self.Cc) ^ MixP(MixState.Cd,self.Dc)
+        newState.Dc = MixP(MixState.Da,self.Ac) ^ MixP(MixState.Db,self.Bc) ^ MixP(MixState.Dc,self.Cc) ^ MixP(MixState.Dd,self.Dc)
+        newState.Ad = MixP(MixState.Aa,self.Ad) ^ MixP(MixState.Ab,self.Bd) ^ MixP(MixState.Ac,self.Cd) ^ MixP(MixState.Ad,self.Dd)
+        newState.Bd = MixP(MixState.Ba,self.Ad) ^ MixP(MixState.Bb,self.Bd) ^ MixP(MixState.Bc,self.Cd) ^ MixP(MixState.Bd,self.Dd)
+        newState.Cd = MixP(MixState.Ca,self.Ad) ^ MixP(MixState.Cb,self.Bd) ^ MixP(MixState.Cc,self.Cd) ^ MixP(MixState.Cd,self.Dd)
+        newState.Dd = MixP(MixState.Da,self.Ad) ^ MixP(MixState.Db,self.Bd) ^ MixP(MixState.Dc,self.Cd) ^ MixP(MixState.Dd,self.Dd)
+        return newState
     def InvMixColumns(self):
         InvMixState = state(Table.InvMix)
         newState = state()
-        newState.Aa = MixProduct(InvMixState.Aa,self.Aa) ^ MixProduct(InvMixState.Ab,self.Ba) ^ MixProduct(InvMixState.Ac,self.Ca) ^ MixProduct(InvMixState.Ad,self.Da)
-        newState.Ba = MixProduct(InvMixState.Ba,self.Aa) ^ MixProduct(InvMixState.Bb,self.Ba) ^ MixProduct(InvMixState.Bc,self.Ca) ^ MixProduct(InvMixState.Bd,self.Da)
-        newState.Ca = MixProduct(InvMixState.Ca,self.Aa) ^ MixProduct(InvMixState.Cb,self.Ba) ^ MixProduct(InvMixState.Cc,self.Ca) ^ MixProduct(InvMixState.Cd,self.Da)
-        newState.Da = MixProduct(InvMixState.Da,self.Aa) ^ MixProduct(InvMixState.Db,self.Ba) ^ MixProduct(InvMixState.Dc,self.Ca) ^ MixProduct(InvMixState.Dd,self.Da)
-        newState.Ab = MixProduct(InvMixState.Aa,self.Ab) ^ MixProduct(InvMixState.Ab,self.Bb) ^ MixProduct(InvMixState.Ac,self.Cb) ^ MixProduct(InvMixState.Ad,self.Db)
-        newState.Bb = MixProduct(InvMixState.Ba,self.Ab) ^ MixProduct(InvMixState.Bb,self.Bb) ^ MixProduct(InvMixState.Bc,self.Cb) ^ MixProduct(InvMixState.Bd,self.Db)
-        newState.Cb = MixProduct(InvMixState.Ca,self.Ab) ^ MixProduct(InvMixState.Cb,self.Bb) ^ MixProduct(InvMixState.Cc,self.Cb) ^ MixProduct(InvMixState.Cd,self.Db)
-        newState.Db = MixProduct(InvMixState.Da,self.Ab) ^ MixProduct(InvMixState.Db,self.Bb) ^ MixProduct(InvMixState.Dc,self.Cb) ^ MixProduct(InvMixState.Dd,self.Db)
-        newState.Ac = MixProduct(InvMixState.Aa,self.Ac) ^ MixProduct(InvMixState.Ab,self.Bc) ^ MixProduct(InvMixState.Ac,self.Cc) ^ MixProduct(InvMixState.Ad,self.Dc)
-        newState.Bc = MixProduct(InvMixState.Ba,self.Ac) ^ MixProduct(InvMixState.Bb,self.Bc) ^ MixProduct(InvMixState.Bc,self.Cc) ^ MixProduct(InvMixState.Bd,self.Dc)
-        newState.Cc = MixProduct(InvMixState.Ca,self.Ac) ^ MixProduct(InvMixState.Cb,self.Bc) ^ MixProduct(InvMixState.Cc,self.Cc) ^ MixProduct(InvMixState.Cd,self.Dc)
-        newState.Dc = MixProduct(InvMixState.Da,self.Ac) ^ MixProduct(InvMixState.Db,self.Bc) ^ MixProduct(InvMixState.Dc,self.Cc) ^ MixProduct(InvMixState.Dd,self.Dc)
-        newState.Ad = MixProduct(InvMixState.Aa,self.Ad) ^ MixProduct(InvMixState.Ab,self.Bd) ^ MixProduct(InvMixState.Ac,self.Cd) ^ MixProduct(InvMixState.Ad,self.Dd)
-        newState.Bd = MixProduct(InvMixState.Ba,self.Ad) ^ MixProduct(InvMixState.Bb,self.Bd) ^ MixProduct(InvMixState.Bc,self.Cd) ^ MixProduct(InvMixState.Bd,self.Dd)
-        newState.Cd = MixProduct(InvMixState.Ca,self.Ad) ^ MixProduct(InvMixState.Cb,self.Bd) ^ MixProduct(InvMixState.Cc,self.Cd) ^ MixProduct(InvMixState.Cd,self.Dd)
-        newState.Dd = MixProduct(InvMixState.Da,self.Ad) ^ MixProduct(InvMixState.Db,self.Bd) ^ MixProduct(InvMixState.Dc,self.Cd) ^ MixProduct(InvMixState.Dd,self.Dd)
-        return newState.net(0x100, 0x11b)
+        newState.Aa = MixP(InvMixState.Aa,self.Aa) ^ MixP(InvMixState.Ab,self.Ba) ^ MixP(InvMixState.Ac,self.Ca) ^ MixP(InvMixState.Ad,self.Da)
+        newState.Ba = MixP(InvMixState.Ba,self.Aa) ^ MixP(InvMixState.Bb,self.Ba) ^ MixP(InvMixState.Bc,self.Ca) ^ MixP(InvMixState.Bd,self.Da)
+        newState.Ca = MixP(InvMixState.Ca,self.Aa) ^ MixP(InvMixState.Cb,self.Ba) ^ MixP(InvMixState.Cc,self.Ca) ^ MixP(InvMixState.Cd,self.Da)
+        newState.Da = MixP(InvMixState.Da,self.Aa) ^ MixP(InvMixState.Db,self.Ba) ^ MixP(InvMixState.Dc,self.Ca) ^ MixP(InvMixState.Dd,self.Da)
+        newState.Ab = MixP(InvMixState.Aa,self.Ab) ^ MixP(InvMixState.Ab,self.Bb) ^ MixP(InvMixState.Ac,self.Cb) ^ MixP(InvMixState.Ad,self.Db)
+        newState.Bb = MixP(InvMixState.Ba,self.Ab) ^ MixP(InvMixState.Bb,self.Bb) ^ MixP(InvMixState.Bc,self.Cb) ^ MixP(InvMixState.Bd,self.Db)
+        newState.Cb = MixP(InvMixState.Ca,self.Ab) ^ MixP(InvMixState.Cb,self.Bb) ^ MixP(InvMixState.Cc,self.Cb) ^ MixP(InvMixState.Cd,self.Db)
+        newState.Db = MixP(InvMixState.Da,self.Ab) ^ MixP(InvMixState.Db,self.Bb) ^ MixP(InvMixState.Dc,self.Cb) ^ MixP(InvMixState.Dd,self.Db)
+        newState.Ac = MixP(InvMixState.Aa,self.Ac) ^ MixP(InvMixState.Ab,self.Bc) ^ MixP(InvMixState.Ac,self.Cc) ^ MixP(InvMixState.Ad,self.Dc)
+        newState.Bc = MixP(InvMixState.Ba,self.Ac) ^ MixP(InvMixState.Bb,self.Bc) ^ MixP(InvMixState.Bc,self.Cc) ^ MixP(InvMixState.Bd,self.Dc)
+        newState.Cc = MixP(InvMixState.Ca,self.Ac) ^ MixP(InvMixState.Cb,self.Bc) ^ MixP(InvMixState.Cc,self.Cc) ^ MixP(InvMixState.Cd,self.Dc)
+        newState.Dc = MixP(InvMixState.Da,self.Ac) ^ MixP(InvMixState.Db,self.Bc) ^ MixP(InvMixState.Dc,self.Cc) ^ MixP(InvMixState.Dd,self.Dc)
+        newState.Ad = MixP(InvMixState.Aa,self.Ad) ^ MixP(InvMixState.Ab,self.Bd) ^ MixP(InvMixState.Ac,self.Cd) ^ MixP(InvMixState.Ad,self.Dd)
+        newState.Bd = MixP(InvMixState.Ba,self.Ad) ^ MixP(InvMixState.Bb,self.Bd) ^ MixP(InvMixState.Bc,self.Cd) ^ MixP(InvMixState.Bd,self.Dd)
+        newState.Cd = MixP(InvMixState.Ca,self.Ad) ^ MixP(InvMixState.Cb,self.Bd) ^ MixP(InvMixState.Cc,self.Cd) ^ MixP(InvMixState.Cd,self.Dd)
+        newState.Dd = MixP(InvMixState.Da,self.Ad) ^ MixP(InvMixState.Db,self.Bd) ^ MixP(InvMixState.Dc,self.Cd) ^ MixP(InvMixState.Dd,self.Dd)
+        return newState
 
 class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
     def __init__(self, initValue:state, Needs:int):
@@ -417,8 +470,18 @@ class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
             self.Stream[num].outPrint()
 
 def main():
-    AES("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34", "2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c", 'E', save=True, out=True)
-    #AES("32 43 f6 a8", "2b 7e 15 16", 'E', True)
+    Plain   = "32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34"
+    Key     = "2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c"
+    Cipher  = AES(Plain, Key, 'E')
+    if state("39 25 84 1d 02 dc 09 fb dc 11 85 97 19 6a 0b 32") == state(Cipher):
+        print("AES 암호화 성공")
+    else:
+        print("암호화 실패")
+    Decrypt = AES(Cipher, Key, 'D')
+    if state(Decrypt) == state(Plain):
+        print("AES 구현 성공")
+    else:
+        print("구현 실패")
 
 if __name__ == "__main__":
     main()
@@ -532,4 +595,29 @@ if __name__ == "__main__":
             I.outPrint()
         else:
             print("틀림")
+
+    # class state 안에 정의해뒀던건데 안써도될 듯 MP 함수에서 걸러내줘서
+    def net(self, MaxNum, xorNum):
+        newState = state()
+        newState.Aa = self.Aa if self.Aa < MaxNum else self.Aa ^ xorNum
+        newState.Ba = self.Ba if self.Ba < MaxNum else self.Ba ^ xorNum
+        newState.Ca = self.Ca if self.Ca < MaxNum else self.Ca ^ xorNum
+        newState.Da = self.Da if self.Da < MaxNum else self.Da ^ xorNum
+
+        newState.Ab = self.Ab if self.Ab < MaxNum else self.Ab ^ xorNum
+        newState.Bb = self.Bb if self.Bb < MaxNum else self.Bb ^ xorNum
+        newState.Cb = self.Cb if self.Cb < MaxNum else self.Cb ^ xorNum
+        newState.Db = self.Db if self.Db < MaxNum else self.Db ^ xorNum
+
+        newState.Ac = self.Ac if self.Ac < MaxNum else self.Ac ^ xorNum
+        newState.Bc = self.Bc if self.Bc < MaxNum else self.Bc ^ xorNum
+        newState.Cc = self.Cc if self.Cc < MaxNum else self.Cc ^ xorNum
+        newState.Dc = self.Dc if self.Dc < MaxNum else self.Dc ^ xorNum
+        
+        newState.Ad = self.Ad if self.Ad < MaxNum else self.Ad ^ xorNum
+        newState.Bd = self.Bd if self.Bd < MaxNum else self.Bd ^ xorNum
+        newState.Cd = self.Cd if self.Cd < MaxNum else self.Cd ^ xorNum
+        newState.Dd = self.Dd if self.Dd < MaxNum else self.Dd ^ xorNum
+        
+        return newState
 """
