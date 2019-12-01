@@ -1,6 +1,6 @@
 import sys  # 옵션 예외처리시 사용(함수 이름 반환)
 
-def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', out:bool=False, save:bool=False): # 16진수인 스트링으로 받아서 state로 변환 후 암호화 진행
+def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', outType:'state'or'str'='state', out:bool=False, save:bool=False): # 16진수인 스트링으로 받아서 state로 변환 후 암호화 진행
     if Version == 'A':
         Nk = 4      # Word 길이
         Nb = Nk*32 # Block 크기
@@ -8,12 +8,17 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
     else:
         print("%s의 옵션이 틀렸습니다. :%s"%(sys._getframe().f_code.co_name, Version))
         return -1
-
+    if type(InputBytes) == str:    
+        I = state(InputBytes)                   # State
+    elif type(InputBytes) == state:
+        I = InputBytes
+    if type(KeyBytes) == str:
+        K = keys(state(KeyBytes),Nr)            # Key Scheduling
+    elif type(KeyBytes) == state:
+        K = keys(KeyBytes, Nr)
     if mode == 'E':
         if out == True:
             print('%s %dBit Encrypting Start: Nk = %1d Nr = %2d\n'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
-        I = state(InputBytes)                   # State
-        K = keys(state(KeyBytes),Nr)            # Key Scheduling
         R = [I^K.Stream[0]]                     # Add Round Key + Cipher key
         SB = []
         SR = []
@@ -75,13 +80,10 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
             print('\noutput:')
             R[-1].outPrint()
             
-        return R[-1].outMain()
-
+        return R[-1].outMain() if outType == 'str' else ( R[-1] if outType == 'state' else -1 )
     elif mode == 'D':
         if out == True:
             print('%s %dbit Decrypting Start: Nk = %1d Nr = %2d\n'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
-        I = state(InputBytes)                   # State
-        K = keys(state(KeyBytes),Nr)            # Key Scheduling
         R = [I^K.Stream[Nr]]                    # Add Round Key + Cipher key
         SB = []
         SR = []
@@ -143,8 +145,7 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
             print('\nR[%02d]:'%(Nr))
             R[-1].outPrint()
             
-        return R[-1].outMain()
-
+        return R[-1].outMain() if outType == 'str' else ( R[-1] if outType == 'state' else -1 )
     else:
         print("%s의 옵션이 틀렸습니다. :%s"%(sys._getframe().f_code.co_name, mode))
         return -1
@@ -218,7 +219,7 @@ class state:
         S = initValue.split()
         while len(S) < 16:  # 패딩: 남는 부분 0으로 채우기
             S.append('0')
-
+        
         self.Aa = int(S[0], 16)
         self.Ba = int(S[1], 16)
         self.Ca = int(S[2], 16)
@@ -285,7 +286,6 @@ class state:
             return True
         else:
             return False
-
     def outMain(self, out:bool=False):
         tmp = ' '.join([hex(self.Aa)[2:],hex(self.Ba)[2:],hex(self.Ca)[2:],hex(self.Da)[2:],
                         hex(self.Ab)[2:],hex(self.Bb)[2:],hex(self.Cb)[2:],hex(self.Db)[2:],
@@ -432,7 +432,28 @@ class state:
         newState.Cd = MixP(InvMixState.Ca,self.Ad) ^ MixP(InvMixState.Cb,self.Bd) ^ MixP(InvMixState.Cc,self.Cd) ^ MixP(InvMixState.Cd,self.Dd)
         newState.Dd = MixP(InvMixState.Da,self.Ad) ^ MixP(InvMixState.Db,self.Bd) ^ MixP(InvMixState.Dc,self.Cd) ^ MixP(InvMixState.Dd,self.Dd)
         return newState
-
+def stetesOut(Names:list, *states):
+    A, B, C, D = [], [], [], []
+    for i in states:
+        A.append([i.Aa, i.Ab, i.Ac, i.Ad])
+        B.append([i.Ba, i.Bb, i.Bc, i.Bd])
+        C.append([i.Ca, i.Cb, i.Cc, i.Cd])
+        D.append([i.Da, i.Db, i.Dc, i.Dd])
+    
+    for i in range(len(Names)):
+        print("   | %11s |"%Names[i], end='')
+    print()
+    for i in range(0,len(A)):
+        print("   | %02x %02x %02x %02x |"%(A[i][0],A[i][1],A[i][2],A[i][3]), end='')
+    print()
+    for i in range(0,len(B)):
+        print("   | %02x %02x %02x %02x |"%(B[i][0],B[i][1],B[i][2],B[i][3]), end='')
+    print()
+    for i in range(0,len(C)):
+        print("   | %02x %02x %02x %02x |"%(C[i][0],C[i][1],C[i][2],C[i][3]), end='')
+    print()
+    for i in range(0,len(D)):
+        print("   | %02x %02x %02x %02x |"%(D[i][0],D[i][1],D[i][2],D[i][3]), end='')
 class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
     def __init__(self, initValue:state, Needs:int):
         self.Stream = []
@@ -470,18 +491,19 @@ class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
             self.Stream[num].outPrint()
 
 def main():
-    Plain   = "32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34"
-    Key     = "2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c"
+    Plain   = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34")
+    Key     = state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c")
     Cipher  = AES(Plain, Key, 'E')
-    if state("39 25 84 1d 02 dc 09 fb dc 11 85 97 19 6a 0b 32") == state(Cipher):
+    if state("39 25 84 1d 02 dc 09 fb dc 11 85 97 19 6a 0b 32") == Cipher:
         print("AES 암호화 성공")
     else:
         print("암호화 실패")
     Decrypt = AES(Cipher, Key, 'D')
-    if state(Decrypt) == state(Plain):
+    if Decrypt == Plain:
         print("AES 구현 성공")
     else:
         print("구현 실패")
+    stetesOut(['Plain', 'Cipher', 'Decrypt'], Plain, Cipher, Decrypt)
 
 if __name__ == "__main__":
     main()
