@@ -1,14 +1,44 @@
 import sys  # 옵션 예외처리시 사용(함수 이름 반환)
+def stetesOut(Names:list, *states):
+    A, B, C, D = [], [], [], []
+    for i in states:
+        A.append([i.Aa, i.Ab, i.Ac, i.Ad])
+        B.append([i.Ba, i.Bb, i.Bc, i.Bd])
+        C.append([i.Ca, i.Cb, i.Cc, i.Cd])
+        D.append([i.Da, i.Db, i.Dc, i.Dd])
 
-def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', outType:'state'or'str'='state', out:bool=False, save:bool=False): # 16진수인 스트링으로 받아서 state로 변환 후 암호화 진행
+    for i in range(len(Names)):
+        print("   | %11s |"%Names[i], end='') if Names[i] != 'Empty' else print("                  ", end='')
+    print()
+    for i in range(0,len(A)):
+        print("   | %02x %02x %02x %02x |"%(A[i][0],A[i][1],A[i][2],A[i][3]), end='')  if Names[i] != 'Empty' else print("                  ", end='')
+    print()
+    for i in range(0,len(B)):
+        print("   | %02x %02x %02x %02x |"%(B[i][0],B[i][1],B[i][2],B[i][3]), end='')  if Names[i] != 'Empty' else print("                  ", end='')
+    print()
+    for i in range(0,len(C)):
+        print("   | %02x %02x %02x %02x |"%(C[i][0],C[i][1],C[i][2],C[i][3]), end='')  if Names[i] != 'Empty' else print("                  ", end='')
+    print()
+    for i in range(0,len(D)):
+        print("   | %02x %02x %02x %02x |"%(D[i][0],D[i][1],D[i][2],D[i][3]), end='')  if Names[i] != 'Empty' else print("                  ", end='')
+    print('\n')
+def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', outType:'state'or'str'='state', out:bool=False, save:bool=False):
     if Version == 'A':
-        Nk = 4      # Word 길이
-        Nb = Nk*32 # Block 크기
-        Nr = 10     # Round 횟수
+        Nk = 4          # Word 길이
+        Nb = Nk*32      # Block 크기
+        Nr = 10         # Round 횟수
+    elif Version == 'B':
+        Nk = 6
+        Nb = Nk*32
+        Nr = 10
+    elif Version == 'C':
+        Nk = 8
+        Nb = Nk*32
+        Nr = 14
     else:
         print("%s의 옵션이 틀렸습니다. :%s"%(sys._getframe().f_code.co_name, Version))
         return -1
-    if type(InputBytes) == str:    
+    if type(InputBytes) == str:
         I = state(InputBytes)                   # State
     elif type(InputBytes) == state:
         I = InputBytes
@@ -54,32 +84,14 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
             R[0] = SR[0]^K.Stream[Nr]           # Add Round Key + Round key 10
 
         if out == True:
-            print('\ninput:')
-            I.outPrint()
-            print('\nKey[0]:')
-            K.Stream[0].outPrint()
-            for i in range(Nr-1):
-                print('\nR[%02d]:'%i)
-                R[i].outPrint()
-                print('\nSB[%02d]:'%i)
-                SB[i].outPrint()
-                print('\nSR[%02d]:'%i)
-                SR[i].outPrint()
-                print('\nMC[%02d]:'%i)
-                MC[i].outPrint()
-                print('\nKey[%02d]:'%(i+1))
-                K.Stream[i+1].outPrint()
-            print('\nR[%02d]:'%Nr-1)
-            R[Nr-1].outPrint()
-            print('\nSB[%02d]:'%Nr-1)
-            SB[Nr-1].outPrint()
-            print('\nSR[%02d]:'%Nr-1)
-            SR[Nr-1].outPrint()
-            print('\nKey[%02d]:'%(Nr))
-            K.Stream[Nr].outPrint()
-            print('\noutput:')
-            R[-1].outPrint()
-            
+            if save == True:
+                stetesOut([     'input',            'Empty',            'Empty',            'Empty',            'Key %2d'%0],       I,          state(),    state(),    state(),    K.Stream[0])
+                for i in range(Nr-1):
+                    stetesOut([ 'Round %2d'%(i+1),  'SubB %2d'%(i+1),   'ShiftR %2d'%(i+1), 'MixC %2d'%(i+1),   'Key %2d'%(i+1)],   R[i],       SB[i],      SR[i],      MC[i],      K.Stream[i+1])
+                stetesOut([     'Round %2d'%(Nr),   'SubB %2d'%(Nr),    'ShiftR %2d'%(Nr),  'Empty',            'Key %2d'%Nr],      R[Nr-1],    SB[Nr-1],   SR[Nr-1],   state(),    K.Stream[Nr])
+                stetesOut([     'output'], R[Nr])
+            else:
+                stetesOut([     'input',            'Key',              'output'], I, K.Stream[0], R[0])
         return R[-1].outMain() if outType == 'str' else ( R[-1] if outType == 'state' else -1 )
     elif mode == 'D':
         if out == True:
@@ -117,34 +129,16 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
                 SR[0] = MC[0].InvShiftRows()    # InvShiftRows
             SB[0] = SR[0].InvSubBytes()         # InvSubBytes
             R[0] = SB[0]^K.Stream[0]            # Add Round Key + Round key 0
-
+        
         if out == True:
-            print('\ninput:')
-            I.outPrint()
-            print('\nKey[0]:')
-            K.Stream[Nr].outPrint()
-            print('\nR[%02d]:'%i)
-            R[0].outPrint()
-            for i in range(Nr-1):
-                print('\nSR[%02d]:'%i)
-                SR[i].outPrint()
-                print('\nSB[%02d]:'%i)
-                SB[i].outPrint()
-                print('\nKey[%02d]:'%(i+1))
-                K.Stream[Nr-(i+1)].outPrint()
-                print('\nR[%02d]:'%(i+1))
-                R[i+1].outPrint()
-                print('\nMC[%02d]:'%i)
-                MC[i].outPrint()
-            print('\nSR[%02d]:'%(Nr-1))
-            SR[(Nr-1)].outPrint()
-            print('\nSB[%02d]:'%(Nr-1))
-            SB[(Nr-1)].outPrint()
-            print('\nKey[%02d]:'%(Nr))
-            K.Stream[0].outPrint()
-            print('\nR[%02d]:'%(Nr))
-            R[-1].outPrint()
-            
+            if save == True:
+                stetesOut([     'input',            'Empty',            'Empty',                'Empty',            'Key %2d'%0],       I,      state(),    state(),    state(),    K.Stream[Nr])
+                stetesOut([     'Round %2d'%1,      'Empty',            'I ShiftR %2d'%1,       'I SubB %2d'%1,     'I Key %2d'%1],     R[0],   state(),    SR[0],      SB[0],      K.Stream[Nr-1])
+                for i in range(Nr-1):
+                    stetesOut([ 'Round %2d'%(i+2),  'I MixC %2d'%(i+2), 'I ShiftR %2d'%(i+2),   'I SubB %2d'%(i+2), 'I Key %2d'%(i+2)], R[i+1], MC[i],      SR[i+1],    SB[i+1],    K.Stream[Nr-(i+2)])
+                stetesOut([     'output'], R[Nr])
+            else:
+                stetesOut([     'input',            'Key',              'output'], I, K.Stream[0], R[0])
         return R[-1].outMain() if outType == 'str' else ( R[-1] if outType == 'state' else -1 )
     else:
         print("%s의 옵션이 틀렸습니다. :%s"%(sys._getframe().f_code.co_name, mode))
@@ -190,7 +184,7 @@ class Table:
 
     Mix     = "02 01 01 03 03 02 01 01 01 03 02 01 01 01 03 02"
     InvMix  = "0e 09 0d 0b 0b 0e 09 0d 0d 0b 0e 09 09 0d 0b 0e"
-def MixP(Mix:int, X:int): # 순서는 상관없지만 Mix에 작은 수를 넣는 게 계산이 편하다.
+def MixP(Mix:int, X:int): # 원래라면 순서는 상관없지만 Mix에 작은 수를 넣는 게 계산이 편하다.
     ''' 
     GF = [0, 0, 0, 0]
     GF[0] = Mix%2**1
@@ -215,8 +209,13 @@ def MixP(Mix:int, X:int): # 순서는 상관없지만 Mix에 작은 수를 넣�
         Mix >>= 1
     return result
 class state:
-    def __init__(self, initValue:str=""):
-        S = initValue.split()
+    def __init__(self, initValue:'Empty'or'ValueStr' =""):
+        S = []
+        if initValue.find(" ") == -1:
+            for i in range(len(initValue)//2):
+                S.append(initValue[i*2:i*2+2])
+        else:
+            S = initValue.split()
         while len(S) < 16:  # 패딩: 남는 부분 0으로 채우기
             S.append('0')
         
@@ -242,21 +241,21 @@ class state:
 
         '''
         print("\n%2x %2x %2x %2x \n%2x %2x %2x %2x \n%2x %2x %2x %2x \n%2x %2x %2x %2x \n\n"%
-                         (self.Aa, self.Ba, self.Ca, self.Da,
-                          self.Ab, self.Bb, self.Cb, self.Db,
-                          self.Ac, self.Bc, self.Cc, self.Dc,
-                          self.Ad, self.Bd, self.Cd, self.Dd))   # StateMain 출력 예시 = outMain함수와 같음.
+                        (self.Aa, self.Ba, self.Ca, self.Da,
+                        self.Ab, self.Bb, self.Cb, self.Db,
+                        self.Ac, self.Bc, self.Cc, self.Dc,
+                        self.Ad, self.Bd, self.Cd, self.Dd))   # StateMain 출력 예시 = outMain함수와 같음.
 
         self.StateMain = [self.Aa, self.Ba, self.Ca, self.Da,
-                          self.Ab, self.Bb, self.Cb, self.Db,
-                          self.Ac, self.Bc, self.Cc, self.Dc,
-                          self.Ad, self.Bd, self.Cd, self.Dd]    # 계산시
+                        self.Ab, self.Bb, self.Cb, self.Db,
+                        self.Ac, self.Bc, self.Cc, self.Dc,
+                        self.Ad, self.Bd, self.Cd, self.Dd]    # 계산시
 
         self.StatePrint = [self.Aa, self.Ab, self.Ac, self.Ad,
-                           self.Ba, self.Bb, self.Bc, self.Bd,
-                           self.Ca, self.Cb, self.Cc, self.Cd,
-                           self.Da, self.Db, self.Dc, self.Dd]   # 출력시
-                           '''
+                        self.Ba, self.Bb, self.Bc, self.Bd,
+                        self.Ca, self.Cb, self.Cc, self.Cd,
+                        self.Da, self.Db, self.Dc, self.Dd]   # 출력시
+                        '''
         
     def __xor__(self, otherState):  #otherState 타입 체크 하고싶은데 자기자신이라 정의가 안됨. 어떻게 해결하지?
         newState = state()
@@ -432,28 +431,6 @@ class state:
         newState.Cd = MixP(InvMixState.Ca,self.Ad) ^ MixP(InvMixState.Cb,self.Bd) ^ MixP(InvMixState.Cc,self.Cd) ^ MixP(InvMixState.Cd,self.Dd)
         newState.Dd = MixP(InvMixState.Da,self.Ad) ^ MixP(InvMixState.Db,self.Bd) ^ MixP(InvMixState.Dc,self.Cd) ^ MixP(InvMixState.Dd,self.Dd)
         return newState
-def stetesOut(Names:list, *states):
-    A, B, C, D = [], [], [], []
-    for i in states:
-        A.append([i.Aa, i.Ab, i.Ac, i.Ad])
-        B.append([i.Ba, i.Bb, i.Bc, i.Bd])
-        C.append([i.Ca, i.Cb, i.Cc, i.Cd])
-        D.append([i.Da, i.Db, i.Dc, i.Dd])
-    
-    for i in range(len(Names)):
-        print("   | %11s |"%Names[i], end='')
-    print()
-    for i in range(0,len(A)):
-        print("   | %02x %02x %02x %02x |"%(A[i][0],A[i][1],A[i][2],A[i][3]), end='')
-    print()
-    for i in range(0,len(B)):
-        print("   | %02x %02x %02x %02x |"%(B[i][0],B[i][1],B[i][2],B[i][3]), end='')
-    print()
-    for i in range(0,len(C)):
-        print("   | %02x %02x %02x %02x |"%(C[i][0],C[i][1],C[i][2],C[i][3]), end='')
-    print()
-    for i in range(0,len(D)):
-        print("   | %02x %02x %02x %02x |"%(D[i][0],D[i][1],D[i][2],D[i][3]), end='')
 class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
     def __init__(self, initValue:state, Needs:int):
         self.Stream = []
@@ -491,19 +468,30 @@ class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
             self.Stream[num].outPrint()
 
 def main():
-    Plain   = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34")
-    Key     = state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c")
-    Cipher  = AES(Plain, Key, 'E')
-    if state("39 25 84 1d 02 dc 09 fb dc 11 85 97 19 6a 0b 32") == Cipher:
+    #128bit
+    #Plain   = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34")
+    #Key     = state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c")
+    #ExC     = state("39 25 84 1d 02 dc 09 fb dc 11 85 97 19 6a 0b 32")
+    #Plain   = state("00112233445566778899aabbccddeeff")
+    #Key     = state("000102030405060708090a0b0c0d0e0f")
+    #ExC     = state("69c4e0d86a7b0430d8cdb78070b4c55a")
+    
+    #192bit
+    Plain   = state("00112233445566778899aabbccddeeff")
+    Key     = state("000102030405060708090a0b0c0d0e0f1011121314151617")
+    ExC     = state("dda97ca4864cdfe06eaf70a0ec0d7191")
+
+    Cipher  = AES(Plain, Key, 'E', 'B', out=True, save=True)
+    if ExC == Cipher:
         print("AES 암호화 성공")
     else:
         print("암호화 실패")
-    Decrypt = AES(Cipher, Key, 'D')
+    Decrypt = AES(Cipher, Key, 'D', 'B', out=False, save=False)
     if Decrypt == Plain:
         print("AES 구현 성공")
     else:
         print("구현 실패")
-    stetesOut(['Plain', 'Cipher', 'Decrypt'], Plain, Cipher, Decrypt)
+    stetesOut(['Key', 'Plain', 'ExC', 'Cipher', 'Decrypt'], Key, Plain, ExC, Cipher, Decrypt)
 
 if __name__ == "__main__":
     main()
