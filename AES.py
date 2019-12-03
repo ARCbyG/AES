@@ -1,26 +1,64 @@
 import sys  # 옵션 예외처리시 사용(함수 이름 반환)
 def stetesOut(Names:list, *states):
+    Nk = len(states[0].STATE[0])
     A, B, C, D = [], [], [], []
-    for i in states:
-        A.append([i.Aa, i.Ab, i.Ac, i.Ad])
-        B.append([i.Ba, i.Bb, i.Bc, i.Bd])
-        C.append([i.Ca, i.Cb, i.Cc, i.Cd])
-        D.append([i.Da, i.Db, i.Dc, i.Dd])
+    for i in range(len(states)):
+        for j in range(Nk):
+            if j == 0:
+                A.append([])
+                B.append([])
+                C.append([])
+                D.append([])
+            A[i].append(states[i].STATE[0][j])
+            B[i].append(states[i].STATE[1][j])
+            C[i].append(states[i].STATE[2][j])
+            D[i].append(states[i].STATE[3][j])
 
-    for i in range(len(Names)):
-        print("   | %11s |"%Names[i], end='') if Names[i] != 'Empty' else print("                  ", end='')
+    for i in range(0,len(Names)):
+        if Nk == 4:
+            print("   | %11s |"%Names[i], end='') if Names[i] != 'Empty' else print("%18s"%'', end='')
+        elif Nk == 6:
+            print("   | %17s |"%Names[i], end='') if Names[i] != 'Empty' else print("%24s"%'', end='')
+        elif Nk == 8:
+            print("   | %23s |"%Names[i], end='') if Names[i] != 'Empty' else print("%30s"%'', end='')
+        else:
+            print("정체를 알 수 없는 state")
     print()
     for i in range(0,len(A)):
-        print("   | %02x %02x %02x %02x |"%(A[i][0],A[i][1],A[i][2],A[i][3]), end='')  if Names[i] != 'Empty' else print("                  ", end='')
+        if Names[i] == 'Empty':
+            print("%18s"%'', end='')
+        else:
+            print("   | ", end='')
+            for j in range(0, Nk):
+                print("%02x "%A[i][j], end='')
+            print("|", end='')
     print()
     for i in range(0,len(B)):
-        print("   | %02x %02x %02x %02x |"%(B[i][0],B[i][1],B[i][2],B[i][3]), end='')  if Names[i] != 'Empty' else print("                  ", end='')
+        if Names[i] == 'Empty':
+            print("%18s"%'', end='')
+        else:
+            print("   | ", end='')
+            for j in range(0, Nk):
+                print("%02x "%B[i][j], end='')
+            print("|", end='')
     print()
     for i in range(0,len(C)):
-        print("   | %02x %02x %02x %02x |"%(C[i][0],C[i][1],C[i][2],C[i][3]), end='')  if Names[i] != 'Empty' else print("                  ", end='')
+        if Names[i] == 'Empty':
+            print("%18s"%'', end='')
+        else:
+            print("   | ", end='')
+            for j in range(0, Nk):
+                print("%02x "%C[i][j], end='')
+            print("|", end='')
     print()
     for i in range(0,len(D)):
-        print("   | %02x %02x %02x %02x |"%(D[i][0],D[i][1],D[i][2],D[i][3]), end='')  if Names[i] != 'Empty' else print("                  ", end='')
+        if Names[i] == 'Empty':
+            print("%18s"%'', end='')
+        else:
+            print("   | ", end='')
+            for j in range(0, Nk):
+                print("%02x "%D[i][j], end='')
+            print("|", end='')
     print('\n')
 def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', outType:'state'or'str'='state', out:bool=False, save:bool=False):
     if Version == 'A':
@@ -30,7 +68,7 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
     elif Version == 'B':
         Nk = 6
         Nb = Nk*32
-        Nr = 10
+        Nr = 12
     elif Version == 'C':
         Nk = 8
         Nb = Nk*32
@@ -39,13 +77,13 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
         print("%s의 옵션이 틀렸습니다. :%s"%(sys._getframe().f_code.co_name, Version))
         return -1
     if type(InputBytes) == str:
-        I = state(InputBytes)                   # State
+        I = state(InputBytes, 4)                   # State
     elif type(InputBytes) == state:
         I = InputBytes
     if type(KeyBytes) == str:
-        K = keys(state(KeyBytes),Nr)            # Key Scheduling
+        K = keys(state(KeyBytes, Nk), Nk, Nr)            # Key Scheduling
     elif type(KeyBytes) == state:
-        K = keys(KeyBytes, Nr)
+        K = keys(KeyBytes, Nk, Nr)
     if mode == 'E':
         if out == True:
             print('%s %dBit Encrypting Start: Nk = %1d Nr = %2d\n'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
@@ -54,14 +92,14 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
         SR = []
         MC = []
         if save == True:
-            R.append(state())
-            SB.append(state())
-            SR.append(state())
+            R.append(state(Col=Nk))
+            SB.append(state(Col=Nk))
+            SR.append(state(Col=Nk))
             for i in range(Nr-1):
-                R.append(state())
-                SB.append(state())
-                SR.append(state())
-                MC.append(state())
+                R.append(state(Col=Nk))
+                SB.append(state(Col=Nk))
+                SR.append(state(Col=Nk))
+                MC.append(state(Col=Nk))
             for i in range(Nr-1):
                 SB[i] = R[i].SubBytes()         # SubBytes
                 SR[i] = SB[i].ShiftRows()       # ShiftRows
@@ -71,9 +109,9 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
             SR[Nr-1] = SB[Nr-1].ShiftRows()     # ShiftRows
             R[Nr] = SR[Nr-1]^K.Stream[Nr]       # Add Round Key + Round key 10
         elif save == False:
-            SB.append(state())
-            SR.append(state())
-            MC.append(state())
+            SB.append(state(Col=Nk))
+            SR.append(state(Col=Nk))
+            MC.append(state(Col=Nk))
             for i in range(Nr-1):
                 SB[0] = R[0].SubBytes()         # SubBytes
                 SR[0] = SB[0].ShiftRows()       # ShiftRows
@@ -85,10 +123,10 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
 
         if out == True:
             if save == True:
-                stetesOut([     'input',            'Empty',            'Empty',            'Empty',            'Key %2d'%0],       I,          state(),    state(),    state(),    K.Stream[0])
+                stetesOut([     'input',            'Empty',            'Empty',            'Empty',            'Key %2d'%0],       I,          state(Col=Nk),  state(Col=Nk),  state(Col=Nk),  K.Stream[0])
                 for i in range(Nr-1):
-                    stetesOut([ 'Round %2d'%(i+1),  'SubB %2d'%(i+1),   'ShiftR %2d'%(i+1), 'MixC %2d'%(i+1),   'Key %2d'%(i+1)],   R[i],       SB[i],      SR[i],      MC[i],      K.Stream[i+1])
-                stetesOut([     'Round %2d'%(Nr),   'SubB %2d'%(Nr),    'ShiftR %2d'%(Nr),  'Empty',            'Key %2d'%Nr],      R[Nr-1],    SB[Nr-1],   SR[Nr-1],   state(),    K.Stream[Nr])
+                    stetesOut([ 'Round %2d'%(i+1),  'SubB %2d'%(i+1),   'ShiftR %2d'%(i+1), 'MixC %2d'%(i+1),   'Key %2d'%(i+1)],   R[i],       SB[i],          SR[i],          MC[i],          K.Stream[i+1])
+                stetesOut([     'Round %2d'%(Nr),   'SubB %2d'%(Nr),    'ShiftR %2d'%(Nr),  'Empty',            'Key %2d'%Nr],      R[Nr-1],    SB[Nr-1],       SR[Nr-1],       state(Col=Nk),  K.Stream[Nr])
                 stetesOut([     'output'], R[Nr])
             else:
                 stetesOut([     'input',            'Key',              'output'], I, K.Stream[0], R[0])
@@ -101,14 +139,14 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
         SR = []
         MC = []
         if save == True:
-            R.append(state())
-            SB.append(state())
-            SR.append(state())
+            R.append(state(Col=Nk))
+            SB.append(state(Col=Nk))
+            SR.append(state(Col=Nk))
             for i in range(Nr-1):
-                R.append(state())
-                SB.append(state())
-                SR.append(state())
-                MC.append(state())
+                R.append(state(Col=Nk))
+                SB.append(state(Col=Nk))
+                SR.append(state(Col=Nk))
+                MC.append(state(Col=Nk))
             SR[0] = R[0].InvShiftRows()         # InvShiftRows
             for i in range(Nr-1):
                 SB[i] = SR[i].InvSubBytes()     # InvSubBytes
@@ -118,9 +156,9 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
             SB[Nr-1] = SR[Nr-1].InvSubBytes()   # InvSubBytes
             R[Nr] = SB[Nr-1]^K.Stream[0]        # Add Round Key + Round key 0
         elif save == False:
-            SB.append(state())
-            SR.append(state())
-            MC.append(state())
+            SB.append(state(Col=Nk))
+            SR.append(state(Col=Nk))
+            MC.append(state(Col=Nk))
             SR[0] = R[0].InvShiftRows()         # InvShiftRows
             for i in range(Nr-1):
                 SB[0] = SR[0].InvSubBytes()     # InvSubBytes
@@ -132,8 +170,8 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
         
         if out == True:
             if save == True:
-                stetesOut([     'input',            'Empty',            'Empty',                'Empty',            'Key %2d'%0],       I,      state(),    state(),    state(),    K.Stream[Nr])
-                stetesOut([     'Round %2d'%1,      'Empty',            'I ShiftR %2d'%1,       'I SubB %2d'%1,     'I Key %2d'%1],     R[0],   state(),    SR[0],      SB[0],      K.Stream[Nr-1])
+                stetesOut([     'input',            'Empty',            'Empty',                'Empty',            'Key %2d'%0],       I,      state(Col=Nk),    state(Col=Nk),    state(Col=Nk),    K.Stream[Nr])
+                stetesOut([     'Round %2d'%1,      'Empty',            'I ShiftR %2d'%1,       'I SubB %2d'%1,     'I Key %2d'%1],     R[0],   state(Col=Nk),    SR[0],      SB[0],      K.Stream[Nr-1])
                 for i in range(Nr-1):
                     stetesOut([ 'Round %2d'%(i+2),  'I MixC %2d'%(i+2), 'I ShiftR %2d'%(i+2),   'I SubB %2d'%(i+2), 'I Key %2d'%(i+2)], R[i+1], MC[i],      SR[i+1],    SB[i+1],    K.Stream[Nr-(i+2)])
                 stetesOut([     'output'], R[Nr])
@@ -182,9 +220,7 @@ class Table:
     # 초기값 0x01. 직전값*2 (직전 값이 0x80 이상일 시엔 xor 0x11B연산을 추가.)
     Rcon = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36] # 사용하는 워드 / 워드길이 = 필요한 RC수. 128bit에선 44/4 10, 192: 52/6 = 8, 256: 60/8 = 7개 사용.
 
-    Mix     = "02 01 01 03 03 02 01 01 01 03 02 01 01 01 03 02"
-    InvMix  = "0e 09 0d 0b 0b 0e 09 0d 0d 0b 0e 09 09 0d 0b 0e"
-def MixP(Mix:int, X:int): # 원래라면 순서는 상관없지만 Mix에 작은 수를 넣는 게 계산이 편하다.
+def MixP(Mix:int, X:int): # 원래라면 순서는 상관없지만 Mix에 작은 수를 넣는 게 파악이 편하다.
     ''' 
     GF = [0, 0, 0, 0]
     GF[0] = Mix%2**1
@@ -209,425 +245,173 @@ def MixP(Mix:int, X:int): # 원래라면 순서는 상관없지만 Mix에 작은
         Mix >>= 1
     return result
 class state:
-    def __init__(self, initValue:'Empty'or'ValueStr' =""):
+    def __init__(self, initValue:str="", Col:int=4):
         S = []
         if initValue.find(" ") == -1:
             for i in range(len(initValue)//2):
                 S.append(initValue[i*2:i*2+2])
         else:
             S = initValue.split()
-        while len(S) < 16:  # 패딩: 남는 부분 0으로 채우기
+        while len(S) < Col*4:  # 패딩: 남는 부분 0으로 채우기
             S.append('0')
         
-        self.Aa = int(S[0], 16)
-        self.Ba = int(S[1], 16)
-        self.Ca = int(S[2], 16)
-        self.Da = int(S[3], 16)
-        
-        self.Ab = int(S[4], 16)
-        self.Bb = int(S[5], 16)
-        self.Cb = int(S[6], 16)
-        self.Db = int(S[7], 16)
-        
-        self.Ac = int(S[8], 16)
-        self.Bc = int(S[9], 16)
-        self.Cc = int(S[10], 16)
-        self.Dc = int(S[11], 16)
-        
-        self.Ad = int(S[12], 16)
-        self.Bd = int(S[13], 16)
-        self.Cd = int(S[14], 16)
-        self.Dd = int(S[15], 16)
-
-        '''
-        print("\n%2x %2x %2x %2x \n%2x %2x %2x %2x \n%2x %2x %2x %2x \n%2x %2x %2x %2x \n\n"%
-                        (self.Aa, self.Ba, self.Ca, self.Da,
-                        self.Ab, self.Bb, self.Cb, self.Db,
-                        self.Ac, self.Bc, self.Cc, self.Dc,
-                        self.Ad, self.Bd, self.Cd, self.Dd))   # StateMain 출력 예시 = outMain함수와 같음.
-
-        self.StateMain = [self.Aa, self.Ba, self.Ca, self.Da,
-                        self.Ab, self.Bb, self.Cb, self.Db,
-                        self.Ac, self.Bc, self.Cc, self.Dc,
-                        self.Ad, self.Bd, self.Cd, self.Dd]    # 계산시
-
-        self.StatePrint = [self.Aa, self.Ab, self.Ac, self.Ad,
-                        self.Ba, self.Bb, self.Bc, self.Bd,
-                        self.Ca, self.Cb, self.Cc, self.Cd,
-                        self.Da, self.Db, self.Dc, self.Dd]   # 출력시
-                        '''
-        
+        self.STATE = []
+        for i in range(Col*4):
+            if i%Col == 0:
+                self.STATE.append([])
+                self.STATE[i//Col].append(0x00)
+            else:
+                self.STATE[i//Col].append(0x00)
+        for i in range(0, Col):
+            self.STATE[0][i] = int(S[i*4+0], 16)
+            self.STATE[1][i] = int(S[i*4+1], 16)
+            self.STATE[2][i] = int(S[i*4+2], 16)
+            self.STATE[3][i] = int(S[i*4+3], 16)
     def __xor__(self, otherState):  #otherState 타입 체크 하고싶은데 자기자신이라 정의가 안됨. 어떻게 해결하지?
-        newState = state()
-        newState.Aa = self.Aa ^ otherState.Aa
-        newState.Ba = self.Ba ^ otherState.Ba
-        newState.Ca = self.Ca ^ otherState.Ca
-        newState.Da = self.Da ^ otherState.Da
-
-        newState.Ab = self.Ab ^ otherState.Ab
-        newState.Bb = self.Bb ^ otherState.Bb
-        newState.Cb = self.Cb ^ otherState.Cb
-        newState.Db = self.Db ^ otherState.Db
-
-        newState.Ac = self.Ac ^ otherState.Ac
-        newState.Bc = self.Bc ^ otherState.Bc
-        newState.Cc = self.Cc ^ otherState.Cc
-        newState.Dc = self.Dc ^ otherState.Dc
-        
-        newState.Ad = self.Ad ^ otherState.Ad
-        newState.Bd = self.Bd ^ otherState.Bd
-        newState.Cd = self.Cd ^ otherState.Cd
-        newState.Dd = self.Dd ^ otherState.Dd
-        
-        return newState
-    def __eq__(self, otherState):
-        if (self.Aa == otherState.Aa and self.Ba == otherState.Ba and self.Ca == otherState.Ca and self.Da == otherState.Da and self.Ab == otherState.Ab and self.Bb == otherState.Bb and self.Cb == otherState.Cb and self.Db == otherState.Db and self.Ac == otherState.Ac and self.Bc == otherState.Bc and self.Cc == otherState.Cc and self.Dc == otherState.Dc and self.Ad == otherState.Ad and self.Bd == otherState.Bd and self.Cd == otherState.Cd and self.Dd == otherState.Dd):
-            return True
+        Nk = len(self.STATE[0])
+        if len(otherState.STATE[0]) != Nk:
+            print("StateXOR: Fail - Column not same")
+            return -1
         else:
-            return False
-    def outMain(self, out:bool=False):
-        tmp = ' '.join([hex(self.Aa)[2:],hex(self.Ba)[2:],hex(self.Ca)[2:],hex(self.Da)[2:],
-                        hex(self.Ab)[2:],hex(self.Bb)[2:],hex(self.Cb)[2:],hex(self.Db)[2:],
-                        hex(self.Ac)[2:],hex(self.Bc)[2:],hex(self.Cc)[2:],hex(self.Dc)[2:],
-                        hex(self.Ad)[2:],hex(self.Bd)[2:],hex(self.Cd)[2:],hex(self.Dd)[2:]])
+            newState = state(Col=len(self.STATE[0]))
+            for i in range(4):
+                for j in range(Nk):
+                    newState.STATE[i][j] = self.STATE[i][j] ^ otherState.STATE[i][j]
+            return newState
+    def __eq__(self, otherState):
+        Nk = len(self.STATE[0])
+        if len(otherState.STATE[0]) != Nk:
+            print("StateEQ: Fail - Column not same")
+            return -1
+        else:
+            result = True
+            for i in range(4):
+                for j in range(Nk):
+                    k = self.STATE[i][j] == otherState.STATE[i][j]
+                    result &= k
+            return result
+    def outMain(self, out:bool=False, between:str=" "):
+        Nk = len(self.STATE[0])
+        tmp = ""
+        for i in range(Nk):
+            for j in range(4):
+                tmp = between.join(tmp, hex(self.STATE[i][j])[2:])
         if out == True:
             print(tmp)
         return tmp
-    def outPrint(self):
-        print("%3x%3x%3x%3x\n%3x%3x%3x%3x\n%3x%3x%3x%3x\n%3x%3x%3x%3x\n"%
-                          (self.Aa, self.Ab, self.Ac, self.Ad,
-                           self.Ba, self.Bb, self.Bc, self.Bd,
-                           self.Ca, self.Cb, self.Cc, self.Cd,
-                           self.Da, self.Db, self.Dc, self.Dd))   # 출력시
-    
     def SubBytes(self):
-        newState = state()
-        newState.Aa = Table.Sbox[self.Aa]
-        newState.Ba = Table.Sbox[self.Ba]
-        newState.Ca = Table.Sbox[self.Ca]
-        newState.Da = Table.Sbox[self.Da]
-
-        newState.Ab = Table.Sbox[self.Ab]
-        newState.Bb = Table.Sbox[self.Bb]
-        newState.Cb = Table.Sbox[self.Cb]
-        newState.Db = Table.Sbox[self.Db]
-
-        newState.Ac = Table.Sbox[self.Ac]
-        newState.Bc = Table.Sbox[self.Bc]
-        newState.Cc = Table.Sbox[self.Cc]
-        newState.Dc = Table.Sbox[self.Dc]
-        
-        newState.Ad = Table.Sbox[self.Ad]
-        newState.Bd = Table.Sbox[self.Bd]
-        newState.Cd = Table.Sbox[self.Cd]
-        newState.Dd = Table.Sbox[self.Dd]
+        Nk = len(self.STATE[0])
+        newState = state(Col=Nk)
+        for i in range(4):
+            for j in range(Nk):
+                newState.STATE[i][j] = Table.Sbox[self.STATE[i][j]]
         return newState
     def InvSubBytes(self):
-        newState = state()
-        newState.Aa = Table.Ibox[self.Aa]
-        newState.Ba = Table.Ibox[self.Ba]
-        newState.Ca = Table.Ibox[self.Ca]
-        newState.Da = Table.Ibox[self.Da]
-
-        newState.Ab = Table.Ibox[self.Ab]
-        newState.Bb = Table.Ibox[self.Bb]
-        newState.Cb = Table.Ibox[self.Cb]
-        newState.Db = Table.Ibox[self.Db]
-
-        newState.Ac = Table.Ibox[self.Ac]
-        newState.Bc = Table.Ibox[self.Bc]
-        newState.Cc = Table.Ibox[self.Cc]
-        newState.Dc = Table.Ibox[self.Dc]
-        
-        newState.Ad = Table.Ibox[self.Ad]
-        newState.Bd = Table.Ibox[self.Bd]
-        newState.Cd = Table.Ibox[self.Cd]
-        newState.Dd = Table.Ibox[self.Dd]
-        
+        Nk = len(self.STATE[0])
+        newState = state(Col=Nk)
+        for i in range(4):
+            for j in range(Nk):
+                newState.STATE[i][j] = Table.Ibox[self.STATE[i][j]]
         return newState
-
     def ShiftRows(self):
-        newState = state()
-        newState.Aa = self.Aa
-        newState.Ba = self.Bb   #
-        newState.Ca = self.Cc   #
-        newState.Da = self.Dd   #
-
-        newState.Ab = self.Ab
-        newState.Bb = self.Bc   #
-        newState.Cb = self.Cd   #
-        newState.Db = self.Da   #
-
-        newState.Ac = self.Ac
-        newState.Bc = self.Bd   #
-        newState.Cc = self.Ca   #
-        newState.Dc = self.Db   #
-        
-        newState.Ad = self.Ad
-        newState.Bd = self.Ba   #
-        newState.Cd = self.Cb   #
-        newState.Dd = self.Dc   #
+        Nk = len(self.STATE[0])
+        newState = state(Col=Nk)
+        for i in range(4):
+            for j in range(Nk):
+                newState.STATE[i][(j-i)%4] = self.STATE[i][j]
         return newState
     def InvShiftRows(self):
-        newState = state()
-        newState.Aa = self.Aa
-        newState.Bb = self.Ba   #
-        newState.Cc = self.Ca   #
-        newState.Dd = self.Da   #
-
-        newState.Ab = self.Ab
-        newState.Bc = self.Bb   #
-        newState.Cd = self.Cb   #
-        newState.Da = self.Db   #
-
-        newState.Ac = self.Ac
-        newState.Bd = self.Bc   #
-        newState.Ca = self.Cc   #
-        newState.Db = self.Dc   #
-        
-        newState.Ad = self.Ad
-        newState.Ba = self.Bd   #
-        newState.Cb = self.Cd   #
-        newState.Dc = self.Dd   #
+        Nk = len(self.STATE[0])
+        newState = state(Col=Nk)
+        for i in range(4):
+            for j in range(Nk):
+                newState.STATE[i][j] = self.STATE[i][(j-i)%4]
         return newState
-
     def MixColumns(self):   # bin(Mix원소)의 1의 수만큼 쉬프트 연산 후 모두 xor. 예를 들어 3(2^1 + 2^0)이라면 1칸쉬프트(*2^1)와 0칸 쉬프트(*2*0)를 xor한다.
-        MixState = state(Table.Mix)
-        newState = state()
-        newState.Aa = MixP(MixState.Aa,self.Aa) ^ MixP(MixState.Ab,self.Ba) ^ MixP(MixState.Ac,self.Ca) ^ MixP(MixState.Ad,self.Da)
-        newState.Ba = MixP(MixState.Ba,self.Aa) ^ MixP(MixState.Bb,self.Ba) ^ MixP(MixState.Bc,self.Ca) ^ MixP(MixState.Bd,self.Da)
-        newState.Ca = MixP(MixState.Ca,self.Aa) ^ MixP(MixState.Cb,self.Ba) ^ MixP(MixState.Cc,self.Ca) ^ MixP(MixState.Cd,self.Da)
-        newState.Da = MixP(MixState.Da,self.Aa) ^ MixP(MixState.Db,self.Ba) ^ MixP(MixState.Dc,self.Ca) ^ MixP(MixState.Dd,self.Da)
-        newState.Ab = MixP(MixState.Aa,self.Ab) ^ MixP(MixState.Ab,self.Bb) ^ MixP(MixState.Ac,self.Cb) ^ MixP(MixState.Ad,self.Db)
-        newState.Bb = MixP(MixState.Ba,self.Ab) ^ MixP(MixState.Bb,self.Bb) ^ MixP(MixState.Bc,self.Cb) ^ MixP(MixState.Bd,self.Db)
-        newState.Cb = MixP(MixState.Ca,self.Ab) ^ MixP(MixState.Cb,self.Bb) ^ MixP(MixState.Cc,self.Cb) ^ MixP(MixState.Cd,self.Db)
-        newState.Db = MixP(MixState.Da,self.Ab) ^ MixP(MixState.Db,self.Bb) ^ MixP(MixState.Dc,self.Cb) ^ MixP(MixState.Dd,self.Db)
-        newState.Ac = MixP(MixState.Aa,self.Ac) ^ MixP(MixState.Ab,self.Bc) ^ MixP(MixState.Ac,self.Cc) ^ MixP(MixState.Ad,self.Dc)
-        newState.Bc = MixP(MixState.Ba,self.Ac) ^ MixP(MixState.Bb,self.Bc) ^ MixP(MixState.Bc,self.Cc) ^ MixP(MixState.Bd,self.Dc)
-        newState.Cc = MixP(MixState.Ca,self.Ac) ^ MixP(MixState.Cb,self.Bc) ^ MixP(MixState.Cc,self.Cc) ^ MixP(MixState.Cd,self.Dc)
-        newState.Dc = MixP(MixState.Da,self.Ac) ^ MixP(MixState.Db,self.Bc) ^ MixP(MixState.Dc,self.Cc) ^ MixP(MixState.Dd,self.Dc)
-        newState.Ad = MixP(MixState.Aa,self.Ad) ^ MixP(MixState.Ab,self.Bd) ^ MixP(MixState.Ac,self.Cd) ^ MixP(MixState.Ad,self.Dd)
-        newState.Bd = MixP(MixState.Ba,self.Ad) ^ MixP(MixState.Bb,self.Bd) ^ MixP(MixState.Bc,self.Cd) ^ MixP(MixState.Bd,self.Dd)
-        newState.Cd = MixP(MixState.Ca,self.Ad) ^ MixP(MixState.Cb,self.Bd) ^ MixP(MixState.Cc,self.Cd) ^ MixP(MixState.Cd,self.Dd)
-        newState.Dd = MixP(MixState.Da,self.Ad) ^ MixP(MixState.Db,self.Bd) ^ MixP(MixState.Dc,self.Cd) ^ MixP(MixState.Dd,self.Dd)
+        Nk = len(self.STATE[0])
+        newState = state(Col=Nk)
+        for i in range(Nk):
+            newState.STATE[0][i] = MixP( 0x02, self.STATE[0][i]) ^ MixP( 0x03, self.STATE[1][i]) ^ MixP( 0x01, self.STATE[2][i]) ^ MixP( 0x01, self.STATE[3][i])
+            newState.STATE[1][i] = MixP( 0x01, self.STATE[0][i]) ^ MixP( 0x02, self.STATE[1][i]) ^ MixP( 0x03, self.STATE[2][i]) ^ MixP( 0x01, self.STATE[3][i])
+            newState.STATE[2][i] = MixP( 0x01, self.STATE[0][i]) ^ MixP( 0x01, self.STATE[1][i]) ^ MixP( 0x02, self.STATE[2][i]) ^ MixP( 0x03, self.STATE[3][i])
+            newState.STATE[3][i] = MixP( 0x03, self.STATE[0][i]) ^ MixP( 0x01, self.STATE[1][i]) ^ MixP( 0x01, self.STATE[2][i]) ^ MixP( 0x02, self.STATE[3][i])
         return newState
     def InvMixColumns(self):
-        InvMixState = state(Table.InvMix)
-        newState = state()
-        newState.Aa = MixP(InvMixState.Aa,self.Aa) ^ MixP(InvMixState.Ab,self.Ba) ^ MixP(InvMixState.Ac,self.Ca) ^ MixP(InvMixState.Ad,self.Da)
-        newState.Ba = MixP(InvMixState.Ba,self.Aa) ^ MixP(InvMixState.Bb,self.Ba) ^ MixP(InvMixState.Bc,self.Ca) ^ MixP(InvMixState.Bd,self.Da)
-        newState.Ca = MixP(InvMixState.Ca,self.Aa) ^ MixP(InvMixState.Cb,self.Ba) ^ MixP(InvMixState.Cc,self.Ca) ^ MixP(InvMixState.Cd,self.Da)
-        newState.Da = MixP(InvMixState.Da,self.Aa) ^ MixP(InvMixState.Db,self.Ba) ^ MixP(InvMixState.Dc,self.Ca) ^ MixP(InvMixState.Dd,self.Da)
-        newState.Ab = MixP(InvMixState.Aa,self.Ab) ^ MixP(InvMixState.Ab,self.Bb) ^ MixP(InvMixState.Ac,self.Cb) ^ MixP(InvMixState.Ad,self.Db)
-        newState.Bb = MixP(InvMixState.Ba,self.Ab) ^ MixP(InvMixState.Bb,self.Bb) ^ MixP(InvMixState.Bc,self.Cb) ^ MixP(InvMixState.Bd,self.Db)
-        newState.Cb = MixP(InvMixState.Ca,self.Ab) ^ MixP(InvMixState.Cb,self.Bb) ^ MixP(InvMixState.Cc,self.Cb) ^ MixP(InvMixState.Cd,self.Db)
-        newState.Db = MixP(InvMixState.Da,self.Ab) ^ MixP(InvMixState.Db,self.Bb) ^ MixP(InvMixState.Dc,self.Cb) ^ MixP(InvMixState.Dd,self.Db)
-        newState.Ac = MixP(InvMixState.Aa,self.Ac) ^ MixP(InvMixState.Ab,self.Bc) ^ MixP(InvMixState.Ac,self.Cc) ^ MixP(InvMixState.Ad,self.Dc)
-        newState.Bc = MixP(InvMixState.Ba,self.Ac) ^ MixP(InvMixState.Bb,self.Bc) ^ MixP(InvMixState.Bc,self.Cc) ^ MixP(InvMixState.Bd,self.Dc)
-        newState.Cc = MixP(InvMixState.Ca,self.Ac) ^ MixP(InvMixState.Cb,self.Bc) ^ MixP(InvMixState.Cc,self.Cc) ^ MixP(InvMixState.Cd,self.Dc)
-        newState.Dc = MixP(InvMixState.Da,self.Ac) ^ MixP(InvMixState.Db,self.Bc) ^ MixP(InvMixState.Dc,self.Cc) ^ MixP(InvMixState.Dd,self.Dc)
-        newState.Ad = MixP(InvMixState.Aa,self.Ad) ^ MixP(InvMixState.Ab,self.Bd) ^ MixP(InvMixState.Ac,self.Cd) ^ MixP(InvMixState.Ad,self.Dd)
-        newState.Bd = MixP(InvMixState.Ba,self.Ad) ^ MixP(InvMixState.Bb,self.Bd) ^ MixP(InvMixState.Bc,self.Cd) ^ MixP(InvMixState.Bd,self.Dd)
-        newState.Cd = MixP(InvMixState.Ca,self.Ad) ^ MixP(InvMixState.Cb,self.Bd) ^ MixP(InvMixState.Cc,self.Cd) ^ MixP(InvMixState.Cd,self.Dd)
-        newState.Dd = MixP(InvMixState.Da,self.Ad) ^ MixP(InvMixState.Db,self.Bd) ^ MixP(InvMixState.Dc,self.Cd) ^ MixP(InvMixState.Dd,self.Dd)
+        Nk = len(self.STATE[0])
+        newState = state(Col=Nk)
+        for i in range(Nk):
+            newState.STATE[0][i] = MixP( 0x0e, self.STATE[0][i]) ^ MixP( 0x0b, self.STATE[1][i]) ^ MixP( 0x0d, self.STATE[2][i]) ^ MixP( 0x09, self.STATE[3][i])
+            newState.STATE[1][i] = MixP( 0x09, self.STATE[0][i]) ^ MixP( 0x0e, self.STATE[1][i]) ^ MixP( 0x0b, self.STATE[2][i]) ^ MixP( 0x0d, self.STATE[3][i])
+            newState.STATE[2][i] = MixP( 0x0d, self.STATE[0][i]) ^ MixP( 0x09, self.STATE[1][i]) ^ MixP( 0x0e, self.STATE[2][i]) ^ MixP( 0x0b, self.STATE[3][i])
+            newState.STATE[3][i] = MixP( 0x0b, self.STATE[0][i]) ^ MixP( 0x0d, self.STATE[1][i]) ^ MixP( 0x09, self.STATE[2][i]) ^ MixP( 0x0e, self.STATE[3][i])
         return newState
-class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
-    def __init__(self, initValue:state, Needs:int):
-        self.Stream = []
-        self.Stream.append(initValue)
-        for j in range(Needs):
-            self.Stream.append(state())
-        for i in range(Needs):
-            self.Stream[i+1].Aa = self.Stream[i].Aa^Table.Sbox[self.Stream[i].Bd]^Table.Rcon[i]
-            self.Stream[i+1].Ba = self.Stream[i].Ba^Table.Sbox[self.Stream[i].Cd]
-            self.Stream[i+1].Ca = self.Stream[i].Ca^Table.Sbox[self.Stream[i].Dd]
-            self.Stream[i+1].Da = self.Stream[i].Da^Table.Sbox[self.Stream[i].Ad]
-            
-            self.Stream[i+1].Ab = self.Stream[i].Ab^self.Stream[i+1].Aa
-            self.Stream[i+1].Bb = self.Stream[i].Bb^self.Stream[i+1].Ba
-            self.Stream[i+1].Cb = self.Stream[i].Cb^self.Stream[i+1].Ca
-            self.Stream[i+1].Db = self.Stream[i].Db^self.Stream[i+1].Da
-            
-            self.Stream[i+1].Ac = self.Stream[i].Ac^self.Stream[i+1].Ab
-            self.Stream[i+1].Bc = self.Stream[i].Bc^self.Stream[i+1].Bb
-            self.Stream[i+1].Cc = self.Stream[i].Cc^self.Stream[i+1].Cb
-            self.Stream[i+1].Dc = self.Stream[i].Dc^self.Stream[i+1].Db
-        
-            self.Stream[i+1].Ad = self.Stream[i].Ad^self.Stream[i+1].Ac
-            self.Stream[i+1].Bd = self.Stream[i].Bd^self.Stream[i+1].Bc
-            self.Stream[i+1].Cd = self.Stream[i].Cd^self.Stream[i+1].Cc
-            self.Stream[i+1].Dd = self.Stream[i].Dd^self.Stream[i+1].Dc            
 
-    def out(self, num:int=-1):
-        if num > len(self.Stream) or num < 0:    # 모두 출력
-            for i in range(len(self.Stream)):
-                print('%d번째 확장키'%(i))
-                self.Stream[i].outPrint()
-        else:
-            print('%d번째 확장키'%num)
-            self.Stream[num].outPrint()
+class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
+    def __init__(self, initValue:state, Nk:int, Nr:int):
+        self.Stream = []
+        for r in range(Nr+1):
+            self.Stream.append(state(Col=4))    # 들어온 초기값과 관계없이 각 라운트 키는 128bit. 즉 4개의 워드이다.
+        for r in range(0, (Nr+1)*4):    # Nr*4 각 스트림(라운드)키는 4개의 워드이므로 라운드수에 4를 곱한다. //아래에서는 한 워드씩 처리해준다.
+            # r//4는 각 라운드 수, r%4는 각 라운드 키의 열 위치.
+            if r < Nk:              # 초기 키 삽입
+                self.Stream[r//4].STATE[0][r%4] = initValue.STATE[0][r]
+                self.Stream[r//4].STATE[1][r%4] = initValue.STATE[1][r]
+                self.Stream[r//4].STATE[2][r%4] = initValue.STATE[2][r]
+                self.Stream[r//4].STATE[3][r%4] = initValue.STATE[3][r]
+            elif r % Nk == 0:       # Rcon 곱해야 할 때.
+                self.Stream[r//4].STATE[0][r%4] = self.Stream[(r-Nk)//4].STATE[0][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[1][(r-1)%4]] ^ Table.Rcon[(r//Nk)-1]
+                self.Stream[r//4].STATE[1][r%4] = self.Stream[(r-Nk)//4].STATE[1][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[2][(r-1)%4]]
+                self.Stream[r//4].STATE[2][r%4] = self.Stream[(r-Nk)//4].STATE[2][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[3][(r-1)%4]]
+                self.Stream[r//4].STATE[3][r%4] = self.Stream[(r-Nk)//4].STATE[3][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[0][(r-1)%4]]
+            else:
+                if Nk == 8 and r%Nk == 4:  # 256bit의 경우엔 특수하게 Rcon을 하지 않는 각 라운드 첫 워드를 만들 때, 직전 값에 S-box를 한번 더 해준다.
+                    self.Stream[r//4].STATE[0][r%4] = self.Stream[(r-Nk)//4].STATE[0][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[0][(r-1)%4]]
+                    self.Stream[r//4].STATE[1][r%4] = self.Stream[(r-Nk)//4].STATE[1][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[1][(r-1)%4]]
+                    self.Stream[r//4].STATE[2][r%4] = self.Stream[(r-Nk)//4].STATE[2][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[2][(r-1)%4]]
+                    self.Stream[r//4].STATE[3][r%4] = self.Stream[(r-Nk)//4].STATE[3][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[3][(r-1)%4]]
+                else:
+                    self.Stream[r//4].STATE[0][r%4] = self.Stream[(r-Nk)//4].STATE[0][(r-Nk)%4] ^ self.Stream[(r-1)//4].STATE[0][(r-1)%4]
+                    self.Stream[r//4].STATE[1][r%4] = self.Stream[(r-Nk)//4].STATE[1][(r-Nk)%4] ^ self.Stream[(r-1)//4].STATE[1][(r-1)%4]
+                    self.Stream[r//4].STATE[2][r%4] = self.Stream[(r-Nk)//4].STATE[2][(r-Nk)%4] ^ self.Stream[(r-1)//4].STATE[2][(r-1)%4]
+                    self.Stream[r//4].STATE[3][r%4] = self.Stream[(r-Nk)//4].STATE[3][(r-Nk)%4] ^ self.Stream[(r-1)//4].STATE[3][(r-1)%4]
 
 def main():
     #128bit
-    #Plain   = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34")
-    #Key     = state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c")
-    #ExC     = state("39 25 84 1d 02 dc 09 fb dc 11 85 97 19 6a 0b 32")
-    #Plain   = state("00112233445566778899aabbccddeeff")
-    #Key     = state("000102030405060708090a0b0c0d0e0f")
-    #ExC     = state("69c4e0d86a7b0430d8cdb78070b4c55a")
+    #Plain   = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34", 4)
+    #Key     = state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c", 4)
+    #ExC     = state("39 25 84 1d 02 dc 09 fb dc 11 85 97 19 6a 0b 32", 4)
+    #T       = 'A'
+    #Plain   = state("00112233445566778899aabbccddeeff", 4)
+    #Key     = state("000102030405060708090a0b0c0d0e0f", 4)
+    #ExC     = state("69c4e0d86a7b0430d8cdb78070b4c55a", 4)
+    #T       = 'A'
     
     #192bit
-    Plain   = state("00112233445566778899aabbccddeeff")
-    Key     = state("000102030405060708090a0b0c0d0e0f1011121314151617")
-    ExC     = state("dda97ca4864cdfe06eaf70a0ec0d7191")
+    #Plain   = state("00112233445566778899aabbccddeeff", 4)
+    #Key     = state("000102030405060708090a0b0c0d0e0f1011121314151617", 6)
+    #ExC     = state("dda97ca4864cdfe06eaf70a0ec0d7191", 4)
+    #T       = 'B'
 
-    Cipher  = AES(Plain, Key, 'E', 'B', out=True, save=True)
+    #256bit
+    Plain   = state("00112233445566778899aabbccddeeff", 4)
+    Key     = state("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", 8)
+    ExC     = state("8ea2b7ca516745bfeafc49904b496089", 4)
+    T       = 'C'
+    #Key     = state("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4", 8)
+    
+
+    Cipher  = AES(Plain, Key, 'E', T, out=False, save=True)
     if ExC == Cipher:
         print("AES 암호화 성공")
     else:
         print("암호화 실패")
-    Decrypt = AES(Cipher, Key, 'D', 'B', out=False, save=False)
+        stetesOut(['ExC', 'Cipher'], ExC, Cipher)
+    Decrypt = AES(Cipher, Key, 'D', T, out=False, save=False)
     if Decrypt == Plain:
         print("AES 구현 성공")
     else:
         print("구현 실패")
-    stetesOut(['Key', 'Plain', 'ExC', 'Cipher', 'Decrypt'], Key, Plain, ExC, Cipher, Decrypt)
+        stetesOut(['Key', 'Plain', 'ExC', 'Cipher', 'Decrypt'], Key, Plain, ExC, Cipher, Decrypt)
 
 if __name__ == "__main__":
     main()
-
-
-""" 
-    기타 메모
-    a = "32"
-    a = int(a,16)
-    #a = hex(a) # 0x꼴로 출력해주지만 bit수가 달라짐. 28->53으로.(50->0x32). 정확한 작동을 위해 안쓰는걸로 하자. >> 어차피 정확한 bit확인 안되니까 가독성을 위해 사용하자.
-    print("32", a, 0x32)
-    print(len("32")*16)
-    print(sys.getsizeof("32"), sys.getsizeof(a), sys.getsizeof(0x32))
-    #print("%x"%int("32", 16))
-    # 패딩 코드
-        initValue = "aa bb cc dd"
-        K = initValue.split()
-        print(K, len(K))
-        while len(K) < 16:
-                K.append('0')
-        print(K, len(K))
-    # SBox를 위한 두자리 수 가르기 코드 -> 근데 sbox를 행렬로 구현하면 필요가 없네..    print(Sbox.Sbox[0xcf])
-        C = state("32 43 f6 a8")
-        C.outPrint()
-        print(C.Aa, hex(C.Aa))
-        print(C.Aa//16, C.Aa%16)
-    # xor 연산 테스트
-        C = state("2b 7e 15 16")
-        C.outPrint()
-        print(C.Aa, hex(C.Aa))
-        C.Aa = C.Aa^0x8a
-        C.outPrint()
-        print(C.Aa, hex(C.Aa))
-    # 키 확장 테스트 : 함수의 확장 키 출력 부분 주석 해제하면 각각 출력됨
-        aa = state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c")
-        K = KeyExtended(aa, 'E')
-    def KeyExtended(Key:state, mode:'E' or 'D'): # 함수보다 클래스가 나을 것 같아 변경. 키 확장 -> 라운드 키 생성
-        # state 클래스 정의보다 뒤에 있어야 Key:주석에서 오류가 나지 않음. 번역과정에서 해석돼서 그런듯. AES는 인자값이 아닌 내부코드에서 사용이라 런타임에서 실행돼서 괜찮은걸로 예상됨.
-        if mode == 'E':
-            Keys = []
-            for i in range(11):
-                Keys.append(state())
-            Keys[0] = Key
-            for i in range(10): # 128bit는 10개의 확장키가 필요함. Keys[0]은 초기키. Keys[10]까지 생성.
-                Keys[i+1].Aa = Keys[i].Aa^Table.Sbox[Keys[i].Bd]^Table.Rcon[i]
-                # 값이 달라서 체크했던 코드. 원인: Bd가 Bb로 잘못 들어가있었음.
-                # print(hex(Keys[i].Bd), ':', hex(Table.Sbox[Keys[i].Bd]))
-                # print(hex(Keys[i].Aa), hex(Table.Sbox[Keys[i].Bd]), hex(Table.Rcon[i]), ':', hex(Keys[i+1].Aa))
-                Keys[i+1].Ba = Keys[i].Ba^Table.Sbox[Keys[i].Cd]
-                Keys[i+1].Ca = Keys[i].Ca^Table.Sbox[Keys[i].Dd]
-                Keys[i+1].Da = Keys[i].Da^Table.Sbox[Keys[i].Ad]
-                
-                Keys[i+1].Ab = Keys[i].Ab^Keys[i+1].Aa
-                Keys[i+1].Bb = Keys[i].Bb^Keys[i+1].Ba
-                Keys[i+1].Cb = Keys[i].Cb^Keys[i+1].Ca
-                Keys[i+1].Db = Keys[i].Db^Keys[i+1].Da
-                
-                Keys[i+1].Ac = Keys[i].Ac^Keys[i+1].Ab
-                Keys[i+1].Bc = Keys[i].Bc^Keys[i+1].Bb
-                Keys[i+1].Cc = Keys[i].Cc^Keys[i+1].Cb
-                Keys[i+1].Dc = Keys[i].Dc^Keys[i+1].Db
-            
-                Keys[i+1].Ad = Keys[i].Ad^Keys[i+1].Ac
-                Keys[i+1].Bd = Keys[i].Bd^Keys[i+1].Bc
-                Keys[i+1].Cd = Keys[i].Cd^Keys[i+1].Cc
-                Keys[i+1].Dd = Keys[i].Dd^Keys[i+1].Dc
-
-                # c확장키 출력
-                # print('%d번째 확장키'%(i+1))
-                # Keys[i+1].outPrint()
-            return Keys
-
-        elif mode == 'D':
-            pass
-
-        else:
-            print("%s의 옵션이 틀렸습니다. :%s"%(sys._getframe().f_code.co_name, mode))
-            return -1
-    # 클래스 키 확장 테스트
-        aa = state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c")
-        K = keys(aa)
-        # print(K.out())
-        K.out()
-    # state eq 연산자 오버로딩 및 xor 테스트
-        I = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34")
-        K = state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c")
-        R = I^K
-        R.outPrint()
-        R = R^K
-        R.outPrint()
-        I = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 32")
-        if I == R:
-            I.outPrint()
-        else:
-            print("틀림")
-    # SR 테스트
-        I = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34")
-        R = I.ShiftRows()
-        R.outPrint()
-        R = R.InvShiftRows()
-        if I == R:
-            I.outPrint()
-        else:
-            print("틀림")
-    # SB 테스트
-        I = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34")
-        R = I.SubBytes()
-        R.outPrint()
-        R = R.InvSubBytes()
-        if I == R:
-            I.outPrint()
-        else:
-            print("틀림")
-
-    # class state 안에 정의해뒀던건데 안써도될 듯 MP 함수에서 걸러내줘서
-    def net(self, MaxNum, xorNum):
-        newState = state()
-        newState.Aa = self.Aa if self.Aa < MaxNum else self.Aa ^ xorNum
-        newState.Ba = self.Ba if self.Ba < MaxNum else self.Ba ^ xorNum
-        newState.Ca = self.Ca if self.Ca < MaxNum else self.Ca ^ xorNum
-        newState.Da = self.Da if self.Da < MaxNum else self.Da ^ xorNum
-
-        newState.Ab = self.Ab if self.Ab < MaxNum else self.Ab ^ xorNum
-        newState.Bb = self.Bb if self.Bb < MaxNum else self.Bb ^ xorNum
-        newState.Cb = self.Cb if self.Cb < MaxNum else self.Cb ^ xorNum
-        newState.Db = self.Db if self.Db < MaxNum else self.Db ^ xorNum
-
-        newState.Ac = self.Ac if self.Ac < MaxNum else self.Ac ^ xorNum
-        newState.Bc = self.Bc if self.Bc < MaxNum else self.Bc ^ xorNum
-        newState.Cc = self.Cc if self.Cc < MaxNum else self.Cc ^ xorNum
-        newState.Dc = self.Dc if self.Dc < MaxNum else self.Dc ^ xorNum
-        
-        newState.Ad = self.Ad if self.Ad < MaxNum else self.Ad ^ xorNum
-        newState.Bd = self.Bd if self.Bd < MaxNum else self.Bd ^ xorNum
-        newState.Cd = self.Cd if self.Cd < MaxNum else self.Cd ^ xorNum
-        newState.Dd = self.Dd if self.Dd < MaxNum else self.Dd ^ xorNum
-        
-        return newState
-"""
