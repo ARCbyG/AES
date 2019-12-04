@@ -1,70 +1,85 @@
 import sys  # 옵션 예외처리시 사용(함수 이름 반환)
-def stetesOut(Names:list, *states):
-    Nk = len(states[0].STATE[0])
-    A, B, C, D = [], [], [], []
-    for i in range(len(states)):
-        for j in range(Nk):
-            if j == 0:
-                A.append([])
-                B.append([])
-                C.append([])
-                D.append([])
-            A[i].append(states[i].STATE[0][j])
-            B[i].append(states[i].STATE[1][j])
-            C[i].append(states[i].STATE[2][j])
-            D[i].append(states[i].STATE[3][j])
+def stetesOut(subNames:list, *states, mainName:str=""):
+    A, B, C, D, Nk = [], [], [], [], []
+    if type(states[0]) == list:
+        for i in range(len(states[0])):
+            Nk.append(len(states[0][i].STATE[0]))
+            for j in range(Nk[i]):
+                if j == 0:
+                    A.append([])
+                    B.append([])
+                    C.append([])
+                    D.append([])
+                A[i].append(states[0][i].STATE[0][j])
+                B[i].append(states[0][i].STATE[1][j])
+                C[i].append(states[0][i].STATE[2][j])
+                D[i].append(states[0][i].STATE[3][j])
+    else:
+        for i in range(len(states)):
+            Nk.append(len(states[i].STATE[0]))
+            for j in range(Nk[i]):
+                if j == 0:
+                    A.append([])
+                    B.append([])
+                    C.append([])
+                    D.append([])
+                A[i].append(states[i].STATE[0][j])
+                B[i].append(states[i].STATE[1][j])
+                C[i].append(states[i].STATE[2][j])
+                D[i].append(states[i].STATE[3][j])
 
-    for i in range(0,len(Names)):
-        if Nk == 4:
-            print("   | %11s |"%Names[i], end='') if Names[i] != 'Empty' else print("%18s"%'', end='')
-        elif Nk == 6:
-            print("   | %17s |"%Names[i], end='') if Names[i] != 'Empty' else print("%24s"%'', end='')
-        elif Nk == 8:
-            print("   | %23s |"%Names[i], end='') if Names[i] != 'Empty' else print("%30s"%'', end='')
+    print("   > %s"%mainName)
+    for i in range(0,len(subNames)):
+        if Nk[i] == 4:
+            print("   | %-11s |"%subNames[i], end='') if subNames[i] != 'Empty' else print("%18s"%'', end='')
+        elif Nk[i] == 6:
+            print("   | %-17s |"%subNames[i], end='') if subNames[i] != 'Empty' else print("%24s"%'', end='')
+        elif Nk[i] == 8:
+            print("   | %-23s |"%subNames[i], end='') if subNames[i] != 'Empty' else print("%30s"%'', end='')
         else:
-            print("정체를 알 수 없는 state")
+            print('   잘못된 subNames 값입니다.')
     print()
     for i in range(0,len(A)):
-        if Names[i] == 'Empty':
+        if subNames[i] == 'Empty':
             print("%18s"%'', end='')
         else:
             print("   | ", end='')
-            for j in range(0, Nk):
+            for j in range(0, Nk[i]):
                 print("%02x "%A[i][j], end='')
             print("|", end='')
     print()
     for i in range(0,len(B)):
-        if Names[i] == 'Empty':
+        if subNames[i] == 'Empty':
             print("%18s"%'', end='')
         else:
             print("   | ", end='')
-            for j in range(0, Nk):
+            for j in range(0, Nk[i]):
                 print("%02x "%B[i][j], end='')
             print("|", end='')
     print()
     for i in range(0,len(C)):
-        if Names[i] == 'Empty':
+        if subNames[i] == 'Empty':
             print("%18s"%'', end='')
         else:
             print("   | ", end='')
-            for j in range(0, Nk):
+            for j in range(0, Nk[i]):
                 print("%02x "%C[i][j], end='')
             print("|", end='')
     print()
     for i in range(0,len(D)):
-        if Names[i] == 'Empty':
+        if subNames[i] == 'Empty':
             print("%18s"%'', end='')
         else:
             print("   | ", end='')
-            for j in range(0, Nk):
+            for j in range(0, Nk[i]):
                 print("%02x "%D[i][j], end='')
             print("|", end='')
     print('\n')
 def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', outType:'state'or'str'='state', out:bool=False, save:bool=False):
     if Version == 'A':
-        Nk = 4          # Word 길이
-        Nb = Nk*32      # Block 크기
-        Nr = 10         # Round 횟수
+        Nk = 4                                  # Word 길이
+        Nb = Nk*32                              # Block 크기
+        Nr = 10                                 # Round 횟수
     elif Version == 'B':
         Nk = 6
         Nb = Nk*32
@@ -76,17 +91,16 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
     else:
         print("%s의 옵션이 틀렸습니다. :%s"%(sys._getframe().f_code.co_name, Version))
         return -1
-    if type(InputBytes) == str:
-        I = state(InputBytes, 4)                   # State
+    if type(InputBytes) == str:                 # State
+        I = state(InputBytes, 4)
     elif type(InputBytes) == state:
         I = InputBytes
-    if type(KeyBytes) == str:
-        K = keys(state(KeyBytes, Nk), Nk, Nr)            # Key Scheduling
+    if type(KeyBytes) == str:                   # Key Scheduling
+        K = keys(state(KeyBytes, Nk), Nk, Nr)
     elif type(KeyBytes) == state:
         K = keys(KeyBytes, Nk, Nr)
     if mode == 'E':
-        if out == True:
-            print('%s %dBit Encrypting Start: Nk = %1d Nr = %2d\n'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
+        print('%s %dBit Encrypting Start: Nk = %1d Nr = %2d'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
         R = [I^K.Stream[0]]                     # Add Round Key + Cipher key
         SB = []
         SR = []
@@ -132,8 +146,7 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
                 stetesOut([     'input',            'Key',              'output'], I, K.Stream[0], R[0])
         return R[-1].outMain() if outType == 'str' else ( R[-1] if outType == 'state' else -1 )
     elif mode == 'D':
-        if out == True:
-            print('%s %dbit Decrypting Start: Nk = %1d Nr = %2d\n'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
+        print('%s %dbit Decrypting Start: Nk = %1d Nr = %2d'%(sys._getframe().f_code.co_name, Nb, Nk, Nr))
         R = [I^K.Stream[Nr]]                    # Add Round Key + Cipher key
         SB = []
         SR = []
@@ -218,27 +231,18 @@ class Table:
             0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d]
 
     # 초기값 0x01. 직전값*2 (직전 값이 0x80 이상일 시엔 xor 0x11B연산을 추가.)
-    Rcon = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36] # 사용하는 워드 / 워드길이 = 필요한 RC수. 128bit에선 44/4 10, 192: 52/6 = 8, 256: 60/8 = 7개 사용.
+    # < 필요한워드 / 워드길이 > 올림 = 필요한 RC수.
+    # 128bit    4*11/4 = 4 + 10*4
+    # 192bit    4*13/6 = 6 +  7*6
+    # 256bit    4*15/8 = 8 +  8*8
+    Rcon = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
 
-def MixP(Mix:int, X:int): # 원래라면 순서는 상관없지만 Mix에 작은 수를 넣는 게 파악이 편하다.
-    ''' 
-    GF = [0, 0, 0, 0]
-    GF[0] = Mix%2**1
-    GF[1] = (Mix%2**2)//2**1
-    GF[2] = (Mix%2**3)//2**2
-    GF[3] = Mix//2**3
-    result = 0
-    for i in range(len(GF)):
-        tX = X % 0x100 if (X%2**(8-i))//2**(7-i) == 0 else (X%0x100) ^ 0x1b
-        GF[i] *= 2**i*tX
-        result ^= GF[i]
-    return result'''
+def MixP(Mix:int, X:int):
     result = 0
     for i in range(8):
         if Mix & 1: result ^= X
         K = X & 0x80
         X <<= 1
-        # keeresult a 8 bit
         X &= 0xFF
         if K:
             X ^= 0x1b
@@ -346,25 +350,25 @@ class state:
             newState.STATE[3][i] = MixP( 0x0b, self.STATE[0][i]) ^ MixP( 0x0d, self.STATE[1][i]) ^ MixP( 0x09, self.STATE[2][i]) ^ MixP( 0x0e, self.STATE[3][i])
         return newState
 
-class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
+class keys:     # 복호화 시엔 적용순서만 반대로. K.Stream[Nr] ~ [0]
     def __init__(self, initValue:state, Nk:int, Nr:int):
         self.Stream = []
         for r in range(Nr+1):
-            self.Stream.append(state(Col=4))    # 들어온 초기값과 관계없이 각 라운트 키는 128bit. 즉 4개의 워드이다.
-        for r in range(0, (Nr+1)*4):    # Nr*4 각 스트림(라운드)키는 4개의 워드이므로 라운드수에 4를 곱한다. //아래에서는 한 워드씩 처리해준다.
-            # r//4는 각 라운드 수, r%4는 각 라운드 키의 열 위치.
-            if r < Nk:              # 초기 키 삽입
+            self.Stream.append(state(Col=4))    # 들어온 초기 키값과 관계없이 각 라운드 키는 128bit. 즉 4개의 워드이다.
+        for r in range(0, (Nr+1)*4):            # Nr*4 각 스트림(라운드)키는 4개의 워드이므로 라운드수에 4를 곱한다. //아래에서는 한 워드씩 처리해준다.
+                                                # r//4는 각 라운드 수, r%4는 각 라운드 키의 열 위치.
+            if r < Nk:                          # 초기 키 삽입
                 self.Stream[r//4].STATE[0][r%4] = initValue.STATE[0][r]
                 self.Stream[r//4].STATE[1][r%4] = initValue.STATE[1][r]
                 self.Stream[r//4].STATE[2][r%4] = initValue.STATE[2][r]
                 self.Stream[r//4].STATE[3][r%4] = initValue.STATE[3][r]
-            elif r % Nk == 0:       # Rcon 곱해야 할 때.
+            elif r % Nk == 0:                   # Rcon 곱해야 할 때.
                 self.Stream[r//4].STATE[0][r%4] = self.Stream[(r-Nk)//4].STATE[0][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[1][(r-1)%4]] ^ Table.Rcon[(r//Nk)-1]
                 self.Stream[r//4].STATE[1][r%4] = self.Stream[(r-Nk)//4].STATE[1][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[2][(r-1)%4]]
                 self.Stream[r//4].STATE[2][r%4] = self.Stream[(r-Nk)//4].STATE[2][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[3][(r-1)%4]]
                 self.Stream[r//4].STATE[3][r%4] = self.Stream[(r-Nk)//4].STATE[3][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[0][(r-1)%4]]
             else:
-                if Nk == 8 and r%Nk == 4:  # 256bit의 경우엔 특수하게 Rcon을 하지 않는 각 라운드 첫 워드를 만들 때, 직전 값에 S-box를 한번 더 해준다.
+                if Nk == 8 and r%Nk == 4:       # 256bit의 경우엔 특수하게 Rcon을 하지 않는 각 라운드 첫 워드를 만들 때, 직전 값에 S-box를 한번 더 해준다.
                     self.Stream[r//4].STATE[0][r%4] = self.Stream[(r-Nk)//4].STATE[0][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[0][(r-1)%4]]
                     self.Stream[r//4].STATE[1][r%4] = self.Stream[(r-Nk)//4].STATE[1][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[1][(r-1)%4]]
                     self.Stream[r//4].STATE[2][r%4] = self.Stream[(r-Nk)//4].STATE[2][(r-Nk)%4] ^ Table.Sbox[self.Stream[(r-1)//4].STATE[2][(r-1)%4]]
@@ -376,42 +380,81 @@ class keys: # 복호화 시엔 적용순서만 반대로. K.Stream[10] ~ [0]
                     self.Stream[r//4].STATE[3][r%4] = self.Stream[(r-Nk)//4].STATE[3][(r-Nk)%4] ^ self.Stream[(r-1)//4].STATE[3][(r-1)%4]
 
 def main():
-    #128bit
-    #Plain   = state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34", 4)
-    #Key     = state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c", 4)
-    #ExC     = state("39 25 84 1d 02 dc 09 fb dc 11 85 97 19 6a 0b 32", 4)
-    #T       = 'A'
-    #Plain   = state("00112233445566778899aabbccddeeff", 4)
-    #Key     = state("000102030405060708090a0b0c0d0e0f", 4)
-    #ExC     = state("69c4e0d86a7b0430d8cdb78070b4c55a", 4)
-    #T       = 'A'
+    Plain   = []
+    Key     = []
+    ExC     = []
+    T       = []
+    Cont    = []
+
+    Cont .append("128bit Ex.1")
+    Plain.append(state("32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34", 4))
+    Key  .append(state("2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c", 4))
+    ExC  .append(state("39 25 84 1d 02 dc 09 fb dc 11 85 97 19 6a 0b 32", 4))
+    T    .append('A')
+
+    Cont .append("128bit Ex.2")
+    Plain.append(state("00112233445566778899aabbccddeeff", 4))
+    Key  .append(state("000102030405060708090a0b0c0d0e0f", 4))
+    ExC  .append(state("69c4e0d86a7b0430d8cdb78070b4c55a", 4))
+    T    .append('A')
     
-    #192bit
-    #Plain   = state("00112233445566778899aabbccddeeff", 4)
-    #Key     = state("000102030405060708090a0b0c0d0e0f1011121314151617", 6)
-    #ExC     = state("dda97ca4864cdfe06eaf70a0ec0d7191", 4)
-    #T       = 'B'
-
-    #256bit
-    Plain   = state("00112233445566778899aabbccddeeff", 4)
-    Key     = state("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", 8)
-    ExC     = state("8ea2b7ca516745bfeafc49904b496089", 4)
-    T       = 'C'
-    #Key     = state("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4", 8)
+    Cont .append("192bit")
+    Plain.append(state("00112233445566778899aabbccddeeff", 4))
+    Key  .append(state("000102030405060708090a0b0c0d0e0f1011121314151617", 6))
+    ExC  .append(state("dda97ca4864cdfe06eaf70a0ec0d7191", 4))
+    T    .append('B')
     
+    Cont .append("256bit")
+    Plain.append(state("00112233445566778899aabbccddeeff", 4))
+    Key  .append(state("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", 8))
+    ExC  .append(state("8ea2b7ca516745bfeafc49904b496089", 4))
+    T    .append('C')
+    #Key  .append(state("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4", 8))
+    
+    Cipher      = []
+    Decrypt     = []
+    #TotalName   = []
+    #TotalState  = []
 
-    Cipher  = AES(Plain, Key, 'E', T, out=False, save=True)
-    if ExC == Cipher:
-        print("AES 암호화 성공")
-    else:
-        print("암호화 실패")
-        stetesOut(['ExC', 'Cipher'], ExC, Cipher)
-    Decrypt = AES(Cipher, Key, 'D', T, out=False, save=False)
-    if Decrypt == Plain:
-        print("AES 구현 성공")
-    else:
-        print("구현 실패")
-        stetesOut(['Key', 'Plain', 'ExC', 'Cipher', 'Decrypt'], Key, Plain, ExC, Cipher, Decrypt)
+    for i in range(len(Plain)):
+        print("   > ", end='')
+        Cipher.append(AES(Plain[i], Key[i], 'E', T[i], out=False, save=True))
+        if ExC[i] == Cipher[i]:
+            print("     AES 암호화 성공")
+        else:
+            print("     암호화 실패")
+            stetesOut(['ExC', 'Cipher'], ExC, Cipher)
+        
+        print("   > ", end='')
+        Decrypt.append(AES(Cipher[i], Key[i], 'D', T[i], out=False, save=False))
+        if Decrypt[i] == Plain[i]:
+            print("     AES 구현 성공\n")
+        else:
+            print("     구현 실패")
+            stetesOut(['Plain', 'ExC', 'Cipher', 'Decrypt', 'Key'], Plain[i], ExC[i], Cipher[i], Decrypt[i], Key[i])
+        stetesOut(['Plain', 'ExC', 'Cipher', 'Decrypt', 'Key'], Plain[i], ExC[i], Cipher[i], Decrypt[i], Key[i], mainName=Cont[i], )
 
+        '''
+        TotalName.append('Plain')
+        TotalName.append('ExC')
+        TotalName.append('Cipher')
+        TotalName.append('Decrypt')
+        TotalName.append('Key')
+        
+        TotalState.append(Plain[i])
+        TotalState.append(ExC[i])
+        TotalState.append(Cipher[i])
+        TotalState.append(Decrypt[i])
+        TotalState.append(Key[i])
+        
+
+        if i%2 == 2:
+            TotalName.append('Empty')
+            TotalState.append(state())
+    
+    N = 5
+    for i in range(0, len(TotalName), N):
+        stetesOut(TotalName[i:i+N], "line %d: %s"%((i//N)+1, Cont[i//N]), TotalState[i:i+N])
+'''
 if __name__ == "__main__":
     main()
