@@ -1,4 +1,5 @@
 import sys  # 옵션 예외처리시 사용(함수 이름 반환)
+
 def stetesOut(subNames:list, *states, mainName:str=""):
     A, B, C, D, Nk = [], [], [], [], []
     if type(states[0]) == list:
@@ -75,6 +76,7 @@ def stetesOut(subNames:list, *states, mainName:str=""):
                 print("%02x "%D[i][j], end='')
             print("|", end='')
     print('\n')
+
 def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', outType:'state'or'str'='state', out:bool=False, save:bool=False):
     if Version == 'A':
         Nk = 4                                  # Word 길이
@@ -121,7 +123,7 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
                 R[i+1] = MC[i]^K.Stream[i+1]    # Add Round Key + Round key N
             SB[Nr-1] = R[Nr-1].SubBytes()       # SubBytes
             SR[Nr-1] = SB[Nr-1].ShiftRows()     # ShiftRows
-            R[Nr] = SR[Nr-1]^K.Stream[Nr]       # Add Round Key + Round key 10
+            R[Nr] = SR[Nr-1]^K.Stream[Nr]       # Add Round Key + Round key Nr
         elif save == False:
             SB.append(state(Col=Nk))
             SR.append(state(Col=Nk))
@@ -133,7 +135,7 @@ def AES(InputBytes:str, KeyBytes:str, mode:'E'or'D', Version:'A'or'B'or'C'='A', 
                 R[0] = MC[0]^K.Stream[i+1]      # Add Round Key + Round key N
             SB[0] = R[0].SubBytes()             # SubBytes
             SR[0] = SB[0].ShiftRows()           # ShiftRows
-            R[0] = SR[0]^K.Stream[Nr]           # Add Round Key + Round key 10
+            R[0] = SR[0]^K.Stream[Nr]           # Add Round Key + Round key Nr
 
         if out == True:
             if save == True:
@@ -248,6 +250,7 @@ def MixP(Mix:int, X:int):
             X ^= 0x1b
         Mix >>= 1
     return result
+
 class state:
     def __init__(self, initValue:str="", Col:int=4):
         S = []
@@ -256,7 +259,7 @@ class state:
                 S.append(initValue[i*2:i*2+2])
         else:
             S = initValue.split()
-        while len(S) < Col*4:  # 패딩: 남는 부분 0으로 채우기
+        while len(S) < Col*4:                   # 패딩: 남는 부분 0으로 채우기
             S.append('0')
         
         self.STATE = []
@@ -271,7 +274,7 @@ class state:
             self.STATE[1][i] = int(S[i*4+1], 16)
             self.STATE[2][i] = int(S[i*4+2], 16)
             self.STATE[3][i] = int(S[i*4+3], 16)
-    def __xor__(self, otherState):  #otherState 타입 체크 하고싶은데 자기자신이라 정의가 안됨. 어떻게 해결하지?
+    def __xor__(self, otherState):
         Nk = len(self.STATE[0])
         if len(otherState.STATE[0]) != Nk:
             print("StateXOR: Fail - Column not same")
@@ -331,7 +334,7 @@ class state:
             for j in range(Nk):
                 newState.STATE[i][j] = self.STATE[i][(j-i)%4]
         return newState
-    def MixColumns(self):   # bin(Mix원소)의 1의 수만큼 쉬프트 연산 후 모두 xor. 예를 들어 3(2^1 + 2^0)이라면 1칸쉬프트(*2^1)와 0칸 쉬프트(*2*0)를 xor한다.
+    def MixColumns(self):                       # bin(Mix원소)의 1의 수만큼 쉬프트 연산 후 모두 xor. 예를 들어 3(2^1 + 2^0)이라면 1칸쉬프트(*2^1)와 0칸 쉬프트(*2*0)를 xor한다.
         Nk = len(self.STATE[0])
         newState = state(Col=Nk)
         for i in range(Nk):
@@ -350,7 +353,7 @@ class state:
             newState.STATE[3][i] = MixP( 0x0b, self.STATE[0][i]) ^ MixP( 0x0d, self.STATE[1][i]) ^ MixP( 0x09, self.STATE[2][i]) ^ MixP( 0x0e, self.STATE[3][i])
         return newState
 
-class keys:     # 복호화 시엔 적용순서만 반대로. K.Stream[Nr] ~ [0]
+class keys:                                     # 복호화 시엔 적용순서만 반대로. K.Stream[Nr] ~ [0]
     def __init__(self, initValue:state, Nk:int, Nr:int):
         self.Stream = []
         for r in range(Nr+1):
@@ -409,12 +412,9 @@ def main():
     Key  .append(state("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", 8))
     ExC  .append(state("8ea2b7ca516745bfeafc49904b496089", 4))
     T    .append('C')
-    #Key  .append(state("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4", 8))
     
     Cipher      = []
     Decrypt     = []
-    #TotalName   = []
-    #TotalState  = []
 
     for i in range(len(Plain)):
         print("   > ", end='')
@@ -431,30 +431,8 @@ def main():
             print("     AES 구현 성공\n")
         else:
             print("     구현 실패")
-            stetesOut(['Plain', 'ExC', 'Cipher', 'Decrypt', 'Key'], Plain[i], ExC[i], Cipher[i], Decrypt[i], Key[i])
-        stetesOut(['Plain', 'ExC', 'Cipher', 'Decrypt', 'Key'], Plain[i], ExC[i], Cipher[i], Decrypt[i], Key[i], mainName=Cont[i], )
+            stetesOut(['Plain', 'ExC', 'Cipher', 'Decrypt'], Key[i], Plain[i], ExC[i], Cipher[i], Decrypt[i])
+        stetesOut(['Plain', 'ExC', 'Cipher', 'Decrypt'], Key[i], Plain[i], ExC[i], Cipher[i], Decrypt[i], mainName=Cont[i], )
 
-        '''
-        TotalName.append('Plain')
-        TotalName.append('ExC')
-        TotalName.append('Cipher')
-        TotalName.append('Decrypt')
-        TotalName.append('Key')
-        
-        TotalState.append(Plain[i])
-        TotalState.append(ExC[i])
-        TotalState.append(Cipher[i])
-        TotalState.append(Decrypt[i])
-        TotalState.append(Key[i])
-        
-
-        if i%2 == 2:
-            TotalName.append('Empty')
-            TotalState.append(state())
-    
-    N = 5
-    for i in range(0, len(TotalName), N):
-        stetesOut(TotalName[i:i+N], "line %d: %s"%((i//N)+1, Cont[i//N]), TotalState[i:i+N])
-'''
 if __name__ == "__main__":
     main()
